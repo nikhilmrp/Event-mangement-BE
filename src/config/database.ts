@@ -13,9 +13,12 @@ const {
 const getDBConfig = (): Options => {
   return {
     host: DB_HOST,
-    port: parseInt(DB_PORT),
+    port: Number(DB_PORT),
     dialect: "mysql",
+
     logging: NODE_ENV === "development" ? (msg) => logger.debug(msg) : false,
+
+    // Model / table defaults (✅ correct place for charset & collate)
     define: {
       timestamps: true,
       underscored: true,
@@ -23,9 +26,10 @@ const getDBConfig = (): Options => {
       charset: "utf8mb4",
       collate: "utf8mb4_unicode_ci",
     },
+
+    // Connection-level options (❌ NO collate here)
     dialectOptions: {
       charset: "utf8mb4",
-      collate: "utf8mb4_unicode_ci",
       decimalNumbers: true,
       ...(NODE_ENV === "production" && {
         ssl: {
@@ -34,12 +38,14 @@ const getDBConfig = (): Options => {
         },
       }),
     },
+
     pool: {
       max: NODE_ENV === "production" ? 20 : 10,
       min: NODE_ENV === "production" ? 5 : 0,
       acquire: 60000,
       idle: 10000,
     },
+
     timezone: "+00:00",
   };
 };

@@ -1,15 +1,23 @@
-export class ApiResponse<T = any> {
-  success: boolean;
+class ApiResponse {
   statusCode: number;
+  data: any;
   message: string;
-  data?: T;
+  success: boolean;
 
-  constructor(statusCode: number, message: string, data?: T) {
-    this.success = statusCode < 400;
+  constructor(statusCode: number, data: any, message: string = "Success") {
     this.statusCode = statusCode;
+    this.data = data;
     this.message = message;
-    if (data) {
-      this.data = data;
-    }
+    this.success = statusCode < 400;
+  }
+
+  static success(data: any, message: string = "Success", statusCode: number = 200) {
+    return new ApiResponse(statusCode, data, message);
+  }
+
+  static created(data: any, message: string = "Created successfully") {
+    return new ApiResponse(201, data, message);
   }
 }
+
+export default ApiResponse;

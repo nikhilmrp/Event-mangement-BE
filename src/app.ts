@@ -6,7 +6,7 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import routes from "./routes";
 import { errorHandler } from "./middleware/errorHandler.middleware";
-import { ApiError } from "./utils/ApiError";
+import ApiError from "./utils/ApiError";
 import logger from "./utils/logger";
 
 const app: Application = express();
@@ -17,9 +17,8 @@ app.set("trust proxy", 1);
 // Security middleware
 app.use(
   helmet({
-    contentSecurityPolicy:
-      process.env.NODE_ENV === "production" ? undefined : false,
-  })
+    contentSecurityPolicy: process.env.NODE_ENV === "production" ? undefined : false,
+  }),
 );
 
 // CORS
@@ -46,7 +45,7 @@ if (process.env.NODE_ENV === "development") {
   app.use(
     morgan("combined", {
       stream: { write: (message) => logger.info(message.trim()) },
-    })
+    }),
   );
 }
 

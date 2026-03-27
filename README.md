@@ -2,7 +2,7 @@
 
 This is a system which helps retailers to take order and deliver their product to custoemrs
 
-````ecommerce-backend/
+```ecommerce-backend/
 ├── src/
 │   ├── config/
 │   │   ├── database.ts          # Sequelize config
@@ -38,5 +38,5 @@ This is a system which helps retailers to take order and deliver their product t
 ├── .env.example
 ├── .sequelizerc
 ├── package.json
-└── server.ts```
-````
+└── server.ts
+```
