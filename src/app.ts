@@ -1,4 +1,5 @@
 import express, { Application, Request, Response, NextFunction } from "express";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
@@ -34,6 +35,7 @@ app.use(cors(corsOptions));
 // Body parser
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(cookieParser());
 
 // Compression
 app.use(compression());
@@ -66,8 +68,8 @@ const authLimiter = rateLimit({
 });
 
 app.use("/api/", apiLimiter);
-app.use("/api/v1/auth/login", authLimiter);
-app.use("/api/v1/auth/register", authLimiter);
+app.use("/api/v1/auth/admin-login", authLimiter);
+app.use("/api/v1/auth/register-admin", authLimiter);
 
 // Health check
 app.get("/health", (req: Request, res: Response) => {
@@ -84,7 +86,7 @@ app.get("/health", (req: Request, res: Response) => {
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json({
     success: true,
-    message: "Welcome to E-commerce API",
+    message: "Welcome to event-management API",
     version: "1.0.0",
     docs: "/api/v1",
   });

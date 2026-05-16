@@ -1,10 +1,7 @@
 import jwt, { Secret, SignOptions } from "jsonwebtoken";
+import { JWTPayload } from "../types/jwt.types";
 
-interface JWTPayload {
-  id: number;
-  email: string;
-  role: string;
-}
+export type { JWTPayload };
 
 export const generateToken = (payload: JWTPayload): string => {
   const secret: Secret = process.env.JWT_SECRET || "default-secret";

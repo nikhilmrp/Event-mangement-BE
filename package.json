@@ -1,7 +1,7 @@
 {
-  "name": "ecommerce-backend",
+  "name": "event-management-backend",
   "version": "1.0.0",
-  "description": "E-commerce backend with Node.js, Express, TypeScript, and Sequelize",
+  "description": "event-management backend with Node.js, Express, TypeScript, and Sequelize",
   "main": "dist/server.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
@@ -12,7 +12,7 @@
     "db:seed": "sequelize-cli db:seed:all"
   },
   "keywords": [
-    "ecommerce",
+    "event-management",
     "api",
     "typescript",
     "express"
@@ -22,6 +22,7 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
@@ -38,6 +39,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.8.1",
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
     "@types/jsonwebtoken": "^9.0.10",
@@ -46,8 +48,8 @@
     "cross-env": "^10.1.0",
     "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
     "tsc-alias": "^1.8.8",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.3"
   }
 }

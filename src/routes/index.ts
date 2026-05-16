@@ -1,17 +1,19 @@
 import { Router } from "express";
 import authRoutes from "./auth.routes";
+import configRoutes from "./config";
 
 const router = Router();
 
 router.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "E-commerce API v1",
+    message: "Event-management API v1",
     timestamp: new Date().toISOString(),
   });
 });
 
 router.use("/auth", authRoutes);
+router.use("/config", configRoutes);
 
 // Mount your routes here
 // router.use('/auth', authRoutes);

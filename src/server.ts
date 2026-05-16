@@ -6,6 +6,7 @@ const envFile = `.env.${process.env.NODE_ENV || "development"}`;
 const envPath = path.resolve(process.cwd(), envFile);
 dotenv.config({ path: envPath });
 
+import "./types/express";
 import app from "./app";
 import sequelize from "./config/database";
 import logger from "./utils/logger";
@@ -20,7 +21,7 @@ const startServer = async () => {
 
     // Sync models (only in development)
     if (process.env.NODE_ENV === "development") {
-      await sequelize.sync({ alter: true });
+      await sequelize.sync();
       logger.info("✓ Database models synchronized");
     }
 

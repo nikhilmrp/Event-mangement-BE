@@ -26,6 +26,10 @@
       "@dto/*": ["dto/*"]
     }
   },
+  "ts-node": {
+    "files": true,
+    "require": ["tsconfig-paths/register"]
+  },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

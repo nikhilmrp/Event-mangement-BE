@@ -11,14 +11,20 @@ export interface LoginDto {
   password: string;
 }
 
+export interface AuthUserDto {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  status: string;
+}
+
 export interface AuthResponseDto {
-  user: {
-    id: number;
-    email: string;
-    first_name: string;
-    last_name: string;
-    role: string;
-    status: string;
-  };
+  user: AuthUserDto;
   token: string;
+}
+
+export interface LoginResponseDto {
+  user: AuthUserDto;
 }
