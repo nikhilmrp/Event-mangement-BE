@@ -1,29 +1,11 @@
-import { AuthResponseDto, LoginDto, RegisterAdminDto } from "@dto/auth.dto";
-import { UserRole } from "@models/User.model";
+import { AuthResponseDto, LoginDto, RegisterUserDto } from "@dto/auth.dto";
+import User, { UserRole } from "@models/User.model";
 import userRepository from "@repositories/user.repository";
 import ApiError from "@utils/ApiError";
 import { generateToken } from "@utils/helpers";
 
 class AuthService {
-  async registerAdmin(data: RegisterAdminDto): Promise<AuthResponseDto> {
-    const existingUser = await userRepository.findByEmail(data.email);
-    if (existingUser) {
-      throw ApiError.conflict("User with this email already exists");
-    }
-
-    // Create admin user
-    const user = await userRepository.create({
-      ...data,
-      role: UserRole.ADMIN,
-    });
-
-    // Generate token
-    const token = generateToken({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    });
-
+  private toAuthResponse(user: User, token: string): AuthResponseDto {
     return {
       user: {
         id: user.id,
@@ -37,18 +19,34 @@ class AuthService {
     };
   }
 
-  async adminLogin(data: LoginDto): Promise<AuthResponseDto> {
+  async register(data: RegisterUserDto, role: UserRole): Promise<AuthResponseDto> {
+    const existingUser = await userRepository.findByEmail(data.email);
+    if (existingUser) {
+      throw ApiError.conflict("User with this email already exists");
+    }
+
+    const user = await userRepository.create({ ...data, role });
+
+    const token = generateToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    return this.toAuthResponse(user, token);
+  }
+
+  async login(data: LoginDto, role: UserRole): Promise<AuthResponseDto> {
     const user = await userRepository.findByEmail(data.email);
-    
+
     if (!user) {
       throw ApiError.notFound("User not found");
     }
 
-    if (user?.role !== UserRole.ADMIN) {
-      throw ApiError.unauthorized("You are not authorized to login as an admin");
+    if (user.role !== role) {
+      throw ApiError.unauthorized(`You are not authorized to login as a ${role}`);
     }
 
-   
     const isPasswordValid = await user.comparePassword(data.password);
     if (!isPasswordValid) {
       throw ApiError.unauthorized("Invalid password");
@@ -60,17 +58,7 @@ class AuthService {
       role: user.role,
     });
 
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        role: user.role,
-        status: user.status,
-      },
-      token,
-    };
+    return this.toAuthResponse(user, token);
   }
 }
 

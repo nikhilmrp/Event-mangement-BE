@@ -1,4 +1,5 @@
-import { LoginDto, RegisterAdminDto } from "@dto/auth.dto";
+import { LoginDto, RegisterUserDto } from "@dto/auth.dto";
+import { UserRole } from "@models/User.model";
 import authService from "@services/auth.service";
 import ApiResponse from "@utils/ApiResponse";
 import { asyncHandler } from "@utils/asyncHandler";
@@ -6,26 +7,55 @@ import { AUTH_COOKIE_NAME, getAuthCookieClearOptions, getAuthCookieOptions } fro
 import logger from "@utils/logger";
 import { Request, Response } from "express";
 
+const ROLE_LABELS: Record<UserRole, string> = {
+  [UserRole.ADMIN]: "Admin",
+  [UserRole.AGENT]: "Agent",
+  [UserRole.VENDOR]: "Vendor",
+};
+
 class AuthController {
-  registerAdmin = asyncHandler(async (req: Request, res: Response) => {
-    const data: RegisterAdminDto = req.body;
-    const result = await authService.registerAdmin(data);
-    logger.info("Admin created successfully");
-    res.json(new ApiResponse(201, result, "User created Successfully"));
-  });
+  private createRegister(role: UserRole) {
+    const label = ROLE_LABELS[role];
+    return asyncHandler(async (req: Request, res: Response) => {
+      const data: RegisterUserDto = req.body;
+      const result = await authService.register(data, role);
+      logger.info(`${label} created successfully`);
+      res.json(new ApiResponse(201, result, `${label} created successfully`));
+    });
+  }
 
-  adminLogin = asyncHandler(async (req: Request, res: Response) => {
-    const data: LoginDto = req.body;
-    const { user, token } = await authService.adminLogin(data);
+  private createLogin(role: UserRole) {
+    const label = ROLE_LABELS[role];
+    return asyncHandler(async (req: Request, res: Response) => {
+      const data: LoginDto = req.body;
+      const { user, token } = await authService.login(data, role);
 
-    res.cookie(AUTH_COOKIE_NAME, token, getAuthCookieOptions());
-    res.json(new ApiResponse(200, { user }, "Admin logged in successfully"));
-  });
+      res.cookie(AUTH_COOKIE_NAME, token, getAuthCookieOptions());
+      logger.info(`${label} logged in successfully - ${user.email}`);
+      res.json(new ApiResponse(200, { user }, `${label} logged in successfully`));
+    });
+  }
 
-  adminLogout = asyncHandler(async (_req: Request, res: Response) => {
-    res.clearCookie(AUTH_COOKIE_NAME, getAuthCookieClearOptions());
-    res.json(new ApiResponse(200, null, "Admin logged out successfully"));
-  });
+  private createLogout(role: UserRole) {
+    const label = ROLE_LABELS[role];
+    return asyncHandler(async (_req: Request, res: Response) => {
+      res.clearCookie(AUTH_COOKIE_NAME, getAuthCookieClearOptions());
+      logger.info(`${label} logged out successfully`);
+      res.json(new ApiResponse(200, null, `${label} logged out successfully`));
+    });
+  }
+
+  registerAdmin = this.createRegister(UserRole.ADMIN);
+  adminLogin = this.createLogin(UserRole.ADMIN);
+  adminLogout = this.createLogout(UserRole.ADMIN);
+
+  registerVendor = this.createRegister(UserRole.VENDOR);
+  vendorLogin = this.createLogin(UserRole.VENDOR);
+  vendorLogout = this.createLogout(UserRole.VENDOR);
+
+  registerAgent = this.createRegister(UserRole.AGENT);
+  agentLogin = this.createLogin(UserRole.AGENT);
+  agentLogout = this.createLogout(UserRole.AGENT);
 }
 
 export default new AuthController();

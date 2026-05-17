@@ -1,4 +1,4 @@
-export interface RegisterAdminDto {
+export interface RegisterUserDto {
   email: string;
   password: string;
   first_name: string;
@@ -28,3 +28,6 @@ export interface AuthResponseDto {
 export interface LoginResponseDto {
   user: AuthUserDto;
 }
+
+
+

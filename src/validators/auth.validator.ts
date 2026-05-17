@@ -62,6 +62,9 @@ export const registerAdminSchema = Joi.object({
   phone: phoneValidator.required(),
 }).options({ stripUnknown: true });
 
+export const registerVendorSchema = registerAdminSchema;
+export const registerAgentSchema = registerAdminSchema;
+
 // Login Schema
 export const loginSchema = Joi.object({
   email: Joi.string().email().lowercase().trim().required().messages({

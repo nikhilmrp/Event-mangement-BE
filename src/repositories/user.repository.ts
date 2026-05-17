@@ -1,8 +1,8 @@
-import { RegisterAdminDto } from "@dto/auth.dto";
+import { RegisterUserDto } from "@dto/auth.dto";
 import User, { UserRole } from "@models/User.model";
 
 class UserRepository {
-  async create(data: RegisterAdminDto & { role: UserRole }): Promise<User> {
+  async create(data: RegisterUserDto & { role: UserRole }): Promise<User> {
     return await User.create(data);
   }
 
