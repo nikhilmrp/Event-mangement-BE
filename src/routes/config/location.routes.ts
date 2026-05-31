@@ -13,4 +13,6 @@ router.post(
   locationController.createLocation,
 );
 
+router.get("/get-locations", authenticate, locationController.getLocations);
+
 export default router;

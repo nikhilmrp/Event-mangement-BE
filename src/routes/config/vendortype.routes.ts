@@ -13,4 +13,6 @@ router.post(
   vendorTypeController.createVendorType,
 );
 
+router.get("/get-vendor-types", authenticate, vendorTypeController.getVendorTypes);
+
 export default router;

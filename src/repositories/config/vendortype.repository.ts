@@ -13,6 +13,10 @@ class VendorTypeRepository {
   async create(data: CreateVendorTypeDto): Promise<VendorType> {
     return VendorType.create(data);
   }
+
+  async findAllByStatus(status: boolean): Promise<VendorType[]> {
+    return VendorType.findAll({ where: { status } });
+  }
 }
 
 export default new VendorTypeRepository();

@@ -13,6 +13,13 @@ class LocationController {
     logger.info("Location created successfully", result);
     res.json(new ApiResponse(200, result, "Location created successfully"));
   });
+
+  getLocations = asyncHandler(async (req: Request, res: Response) => {
+    logger.info("Getting locations", req.body);
+    const result = await locationService.getLocations();
+    logger.info("Locations fetched successfully", result);
+    res.json(new ApiResponse(200, result, "Locations fetched successfully"));
+  });
 }
 
 export default new LocationController();

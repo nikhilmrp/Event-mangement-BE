@@ -33,6 +33,21 @@ class VendorCategoryService {
       updated_at: category.updated_at,
     };
   }
+
+  async getVendorCategoriesByVendorTypeId(vendorTypeId: number): Promise<VendorCategoryResponseDto[]> {
+    const categories = await vendorCategoryRepository.findByVendorType(vendorTypeId);
+
+    if (!categories) {
+      throw ApiError.notFound("Vendor categories not found");
+    }
+
+    return categories.map((category) => {
+      return {
+        ...category.toJSON(),
+        id: category.id,
+      };
+    });
+  }
 }
 
 export default new VendorCategoryService();

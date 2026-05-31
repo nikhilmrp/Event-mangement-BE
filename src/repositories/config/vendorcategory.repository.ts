@@ -14,6 +14,10 @@ class VendorCategoryRepository {
   async create(data: CreateVendorCategoryDto): Promise<VendorCategory> {
     return VendorCategory.create(data);
   }
+
+  async findByVendorType(vendorTypeId: number): Promise<VendorCategory[]> {
+    return VendorCategory.findAll({ where: { vendor_type_id: vendorTypeId, status: true } });
+  }
 }
 
 export default new VendorCategoryRepository();

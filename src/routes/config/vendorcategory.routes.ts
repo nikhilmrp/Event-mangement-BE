@@ -13,4 +13,6 @@ router.post(
   vendorCategoryController.createVendorCategory,
 );
 
-export default router;
+router.get("/get-vendor-catogories-by-vendor-type-id/:vendor_type_id", authenticate, vendorCategoryController.getVendorCategoriesByVendorTypeId);
+
+export default router;  

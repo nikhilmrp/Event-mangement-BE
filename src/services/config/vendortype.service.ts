@@ -19,6 +19,19 @@ class VendorTypeService {
       updated_at: vendorType.updated_at,
     };
   }
+
+  async getVendorTypes(): Promise<VendorTypeResponseDto[]> {
+    const vendorTypes = await vendorTypeRepository.findAllByStatus(true);
+    return vendorTypes.map((vendorType) => {
+      return {
+        ...vendorType.toJSON(),
+        id: vendorType.id,
+        name: vendorType.name,
+        commission_percentage: Number(vendorType.commission_percentage),
+        status: vendorType.status,
+      };
+    });
+  }
 }
 
 export default new VendorTypeService();
