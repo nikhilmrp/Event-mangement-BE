@@ -3,7 +3,7 @@ import VendorType from "@models/config/VendorType.model";
 
 class VendorTypeRepository {
   async findById(id: number): Promise<VendorType | null> {
-    return VendorType.findByPk(id);
+    return VendorType.findOne({ where: { id, status: true } });
   }
 
   async findByName(name: string): Promise<VendorType | null> {

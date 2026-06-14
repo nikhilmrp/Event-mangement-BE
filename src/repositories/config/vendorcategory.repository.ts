@@ -1,5 +1,6 @@
 import { CreateVendorCategoryDto } from "@dto/config/vendorcategory.dto";
 import VendorCategory from "@models/config/VendorCategory.model";
+import { Op } from "sequelize";
 
 class VendorCategoryRepository {
   async findByVendorTypeAndName(
@@ -17,6 +18,10 @@ class VendorCategoryRepository {
 
   async findByVendorType(vendorTypeId: number): Promise<VendorCategory[]> {
     return VendorCategory.findAll({ where: { vendor_type_id: vendorTypeId, status: true } });
+  }
+
+  async findByIds(ids: number[]): Promise<VendorCategory[]> {
+    return VendorCategory.findAll({ where: { id: { [Op.in]: ids }, status: true }, attributes: ["id", "name", "vendor_type_id"] });
   }
 }
 

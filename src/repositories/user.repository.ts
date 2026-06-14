@@ -9,6 +9,10 @@ class UserRepository {
   async findByEmail(email: string): Promise<User | null> {
     return await User.findOne({ where: { email } });
   }
+
+  async findByUserId(user_id: number): Promise<User | null> {
+    return await User.findByPk(user_id);
+  }
 }
 
 export default new UserRepository();

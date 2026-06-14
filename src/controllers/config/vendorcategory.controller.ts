@@ -18,7 +18,6 @@ class VendorCategoryController {
   getVendorCategoriesByVendorTypeId = asyncHandler(async (req: Request, res: Response) => {
     logger.info("Getting vendor categories by vendor type id", req.body);
     const vendorTypeId = Number(req.params.vendor_type_id);
-   console.log(req.query.vendor_type_id);
     if (isNaN(vendorTypeId)) {
       throw ApiError.badRequest("Invalid vendor type id");
     }

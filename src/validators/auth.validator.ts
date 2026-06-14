@@ -29,7 +29,7 @@ const nameValidator = (fieldName: string) =>
     });
 
 // Custom validator for Indian phone numbers
-const phoneValidator = Joi.string()
+export const phoneValidator = Joi.string()
   .pattern(/^[6-9]\d{9}$/)
   .messages({
     "string.pattern.base": "Please provide a valid 10-digit Indian phone number starting with 6-9",

@@ -26,6 +26,8 @@ class AgentProfileService {
         tx,
       );
 
+      await agentProfileRepository.updateProfileStep(user_id, 1, false, tx);
+
       return {
         id: agentProfile.id,
         user_id: agentProfile.user_id,

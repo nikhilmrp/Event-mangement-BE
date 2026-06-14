@@ -42,10 +42,10 @@ AgentProfile.init(
     },
     profile_step: {
       type: DataTypes.TINYINT.UNSIGNED,
-      allowNull: false,
-      defaultValue: 1,
+      allowNull: true,
+      defaultValue: 0,
       validate: {
-        min: 1,
+        min: 0,
         max: 2,
       },
     },

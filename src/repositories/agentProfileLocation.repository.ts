@@ -1,4 +1,4 @@
-import AgentProfileLocation from "@models/profile/AgentProfileLocation.model";
+import AgentProfileLocation from "@models/profile/agent/AgentProfileLocation.model";
 import { Transaction } from "sequelize";
 
 class AgentProfileLocationRepository {
