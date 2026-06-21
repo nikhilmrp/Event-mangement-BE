@@ -1,6 +1,8 @@
-# e-commanger-server
+# Event Management Backend
 
-This is a system which helps retailers to take order and deliver their product to custoemrs
+Event management API server.
+
+**API documentation:** [docs/API.md](docs/API.md)
 
 ```ecommerce-backend/
 ├── src/

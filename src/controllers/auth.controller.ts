@@ -29,10 +29,9 @@ class AuthController {
     return asyncHandler(async (req: Request, res: Response) => {
       const data: LoginDto = req.body;
       const { user, token } = await authService.login(data, role);
-
       res.cookie(AUTH_COOKIE_NAME, token, getAuthCookieOptions());
       logger.info(`${label} logged in successfully - ${user.email}`);
-      res.json(new ApiResponse(200, { user }, `${label} logged in successfully`));
+      res.json(new ApiResponse(200, { user, token }, `${label} logged in successfully`));
     });
   }
 
