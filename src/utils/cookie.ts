@@ -25,7 +25,7 @@ export const getAuthCookieOptions = (): CookieOptions => {
   return {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
+    sameSite: "none",
     maxAge: parseJwtExpireToMs(process.env.JWT_EXPIRES_IN || "1h"),
     path: "/",
   };
