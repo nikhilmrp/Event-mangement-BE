@@ -13,7 +13,6 @@ export interface AgentProfileResponseDto {
   service_locations: number[];
 }
 
-
 export interface CreateVendorProfileDto {
   user_id: number;
   business_name: string;
@@ -32,7 +31,6 @@ export interface VendorProfileResponseDto {
   description: string;
 }
 
-
 export interface CreateServiceDetailsDto {
   user_id: number;
   vendor_type_id: number;
@@ -49,9 +47,7 @@ export interface ServiceDetailsResponseDto {
 export interface CreatePricingDetailsDto {
   user_id: number;
   pricing_details: Omit<PricingDetails, "id">[];
-  amount: number;
 }
-
 
 export interface PricingDetails {
   id: number;
@@ -63,7 +59,6 @@ export interface PricingDetailsResponseDto {
   vendor_profile_id: number;
   pricing_Details: PricingDetails[];
 }
-
 
 export interface UploadWorkGalleryDto {
   user_id: number;
