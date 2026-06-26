@@ -11,8 +11,10 @@ interface VendorCategoryAttributes {
   updated_at?: Date;
 }
 
-interface VendorCategoryCreationAttributes
-  extends Optional<VendorCategoryAttributes, "id" | "status"> {}
+interface VendorCategoryCreationAttributes extends Optional<
+  VendorCategoryAttributes,
+  "id" | "status"
+> {}
 
 class VendorCategory
   extends Model<VendorCategoryAttributes, VendorCategoryCreationAttributes>

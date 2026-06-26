@@ -8,7 +8,11 @@ import { validateUserRole } from "@middleware/validateUserRole.middleware";
 
 const router = Router();
 
-router.post("/create-agent-profile", validate(createAgentProfileSchema), agentProfileController.createAgentProfile);
+router.post(
+  "/create-agent-profile",
+  validate(createAgentProfileSchema),
+  agentProfileController.createAgentProfile,
+);
 router.use("/bank-details", validateUserRole(UserRole.AGENT), bankDetailsRoute);
 
 export default router;

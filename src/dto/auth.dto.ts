@@ -28,6 +28,3 @@ export interface AuthResponseDto {
 export interface LoginResponseDto {
   user: AuthUserDto;
 }
-
-
-

@@ -24,7 +24,6 @@ export const createAgentProfileSchema = Joi.object({
   }),
 }).options({ stripUnknown: true });
 
-
 export const createVendorProfileSchema = Joi.object({
   user_id: Joi.number().integer().positive().required().messages({
     "any.required": "User id is required",
@@ -107,14 +106,13 @@ export const createBankDetailsSchema = Joi.object({
     "string.min": "UPI ID must be at least 1 character long",
     "string.max": "UPI ID cannot exceed 255 characters",
   }),
- contact_number: Joi.string().trim().empty("").min(1).max(255).required().messages({
-  "any.required": "Contact number is required",
-  "string.empty": "Contact number cannot be empty",
-  "string.min": "Contact number must be at least 1 character long",
-  "string.max": "Contact number cannot exceed 255 characters",
- }),
-})
-
+  contact_number: Joi.string().trim().empty("").min(1).max(255).required().messages({
+    "any.required": "Contact number is required",
+    "string.empty": "Contact number cannot be empty",
+    "string.min": "Contact number must be at least 1 character long",
+    "string.max": "Contact number cannot exceed 255 characters",
+  }),
+});
 
 export const createServiceDetailsSchema = Joi.object({
   user_id: Joi.number().integer().positive().required().messages({
@@ -137,27 +135,34 @@ export const createServiceDetailsSchema = Joi.object({
   }),
 }).options({ stripUnknown: true });
 
-
 export const createPricingDetailsSchema = Joi.object({
   user_id: Joi.number().integer().positive().required().messages({
     "any.required": "User id is required",
     "number.base": "User id is required",
     "number.positive": "User id must be a positive integer",
   }),
-  pricing_details: Joi.array().items(Joi.object({
-    pricing_type: Joi.string().valid(...Object.values(PricingType)).required().messages({
-      "any.required": "Pricing type is required",
-      "string.valid": "Pricing type must be a valid pricing type",
+  pricing_details: Joi.array()
+    .items(
+      Joi.object({
+        pricing_type: Joi.string()
+          .valid(...Object.values(PricingType))
+          .required()
+          .messages({
+            "any.required": "Pricing type is required",
+            "string.valid": "Pricing type must be a valid pricing type",
+          }),
+        amount: Joi.number().positive().required().messages({
+          "any.required": "Amount is required",
+          "number.base": "Amount is required",
+          "number.positive": "Amount must be a positive number",
+        }),
+      }),
+    )
+    .required()
+    .messages({
+      "any.required": "Pricing details are required",
+      "array.base": "Pricing details must be an array",
     }),
-    amount: Joi.number().positive().required().messages({
-      "any.required": "Amount is required",
-      "number.base": "Amount is required",
-      "number.positive": "Amount must be a positive number",
-    }),
-  })).required().messages({
-    "any.required": "Pricing details are required",
-    "array.base": "Pricing details must be an array",
-  }),
 }).options({ stripUnknown: true });
 
 export const uploadWorkGallerySchema = Joi.object({

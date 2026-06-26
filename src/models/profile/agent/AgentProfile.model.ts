@@ -11,8 +11,10 @@ interface AgentProfileAttributes {
   updated_at?: Date;
 }
 
-interface AgentProfileCreationAttributes
-  extends Optional<AgentProfileAttributes, "id" | "profile_completed" | "profile_step" | "user_id"> {}
+interface AgentProfileCreationAttributes extends Optional<
+  AgentProfileAttributes,
+  "id" | "profile_completed" | "profile_step" | "user_id"
+> {}
 
 class AgentProfile extends Model<AgentProfileAttributes, AgentProfileCreationAttributes> {
   public id!: number;
@@ -23,7 +25,6 @@ class AgentProfile extends Model<AgentProfileAttributes, AgentProfileCreationAtt
   public created_at!: Date;
   public updated_at!: Date;
 }
-
 
 AgentProfile.init(
   {
@@ -73,4 +74,4 @@ AgentProfile.init(
   },
 );
 
-export default AgentProfile;    
+export default AgentProfile;

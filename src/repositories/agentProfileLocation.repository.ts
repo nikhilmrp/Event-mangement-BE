@@ -27,4 +27,3 @@ class AgentProfileLocationRepository {
 }
 
 export default new AgentProfileLocationRepository();
-

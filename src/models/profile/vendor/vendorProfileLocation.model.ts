@@ -9,8 +9,10 @@ interface VendorProfileLocationAttributes {
   updated_at?: Date;
 }
 
-interface VendorProfileLocationCreationAttributes
-  extends Optional<VendorProfileLocationAttributes, "id"> {}
+interface VendorProfileLocationCreationAttributes extends Optional<
+  VendorProfileLocationAttributes,
+  "id"
+> {}
 
 class VendorProfileLocation extends Model<
   VendorProfileLocationAttributes,

@@ -1,11 +1,6 @@
 import { S3Client } from "@aws-sdk/client-s3";
 
-const {
-  AWS_REGION = "ap-south-1",
-  AWS_ACCESS_KEY_ID,
-  AWS_SECRET_ACCESS_KEY,
-} = process.env;
-
+const { AWS_REGION = "ap-south-1", AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY } = process.env;
 
 export const s3Client = new S3Client({
   region: AWS_REGION,

@@ -9,10 +9,15 @@ interface AgentProfileLocationAttributes {
   updated_at?: Date;
 }
 
-interface AgentProfileLocationCreationAttributes
-  extends Optional<AgentProfileLocationAttributes, "id" > {}        
+interface AgentProfileLocationCreationAttributes extends Optional<
+  AgentProfileLocationAttributes,
+  "id"
+> {}
 
-class AgentProfileLocation extends Model<AgentProfileLocationAttributes, AgentProfileLocationCreationAttributes> {
+class AgentProfileLocation extends Model<
+  AgentProfileLocationAttributes,
+  AgentProfileLocationCreationAttributes
+> {
   public id!: number;
   public agent_profile_id!: number;
   public location_id!: number;

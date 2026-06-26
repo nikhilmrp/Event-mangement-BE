@@ -17,7 +17,7 @@ class AgentProfileService {
     if (locations.length !== service_locations.length) {
       throw ApiError.notFound("Some of the service locations are not found");
     }
-    
+
     return sequelize.transaction(async (tx) => {
       const agentProfile = await agentProfileRepository.create({ user_id, address }, tx);
       const agentProfileLocations = await agentProfileLocationRepository.bulkCreateForAgentProfile(
@@ -50,7 +50,10 @@ class AgentProfileService {
         tx,
       );
 
-      return { agent_profile_id: agentProfileId, service_locations: created.map((l) => l.location_id) };
+      return {
+        agent_profile_id: agentProfileId,
+        service_locations: created.map((l) => l.location_id),
+      };
     });
   };
 }

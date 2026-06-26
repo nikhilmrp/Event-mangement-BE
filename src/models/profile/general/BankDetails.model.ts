@@ -69,7 +69,7 @@ BankDetails.init(
     contact_number: {
       type: DataTypes.STRING,
       allowNull: false,
-    }
+    },
   },
   {
     sequelize,
@@ -79,4 +79,4 @@ BankDetails.init(
   },
 );
 
-export default BankDetails; 
+export default BankDetails;

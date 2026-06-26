@@ -29,8 +29,10 @@ interface UserAttributes {
   updated_at?: Date;
 }
 
-interface UserCreationAttributes
-  extends Optional<UserAttributes, "id" | "status" | "email_verified" | "last_login"> {}
+interface UserCreationAttributes extends Optional<
+  UserAttributes,
+  "id" | "status" | "email_verified" | "last_login"
+> {}
 
 class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: number;

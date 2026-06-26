@@ -5,11 +5,6 @@ import { Router } from "express";
 
 const router = Router();
 
-router.post(
-  "/images",
-  authenticate,
-  uploadImages,
-  uploadController.uploadImages,
-);
+router.post("/images", authenticate, uploadImages, uploadController.uploadImages);
 
 export default router;

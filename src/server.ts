@@ -27,9 +27,7 @@ const startServer = async () => {
 
     // Start server
     app.listen(PORT, () => {
-      logger.info(
-        `✓ Server running on port ${PORT} in ${process.env.NODE_ENV} mode`,
-      );
+      logger.info(`✓ Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
     });
   } catch (error) {
     logger.error("✗ Unable to start server:", error);

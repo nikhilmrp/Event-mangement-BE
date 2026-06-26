@@ -14,7 +14,7 @@ class VendorTypeController {
     res.json(new ApiResponse(200, result, "Vendor type created successfully"));
   });
 
-  getVendorTypes=asyncHandler(async(req:Request,res:Response)=>{  
+  getVendorTypes = asyncHandler(async (req: Request, res: Response) => {
     const result = await vendorTypeService.getVendorTypes();
     logger.info("Vendor types fetched successfully", result);
     res.json(new ApiResponse(200, result, "Vendor types fetched successfully"));

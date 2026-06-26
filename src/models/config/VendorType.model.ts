@@ -10,8 +10,7 @@ interface VendorTypeAttributes {
   updated_at?: Date;
 }
 
-interface VendorTypeCreationAttributes
-  extends Optional<VendorTypeAttributes, "id" | "status"> {}
+interface VendorTypeCreationAttributes extends Optional<VendorTypeAttributes, "id" | "status"> {}
 
 class VendorType
   extends Model<VendorTypeAttributes, VendorTypeCreationAttributes>

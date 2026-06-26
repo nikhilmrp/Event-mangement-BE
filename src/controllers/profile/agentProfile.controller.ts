@@ -7,8 +7,12 @@ import { Request, Response } from "express";
 
 class AgentProfileController {
   createAgentProfile = asyncHandler(async (req: Request, res: Response) => {
-    const { user_id, address,service_locations }: CreateAgentProfileDto = req.body;
-    const agentProfile = await profileService.createAgentProfile({ user_id, address,service_locations });
+    const { user_id, address, service_locations }: CreateAgentProfileDto = req.body;
+    const agentProfile = await profileService.createAgentProfile({
+      user_id,
+      address,
+      service_locations,
+    });
     res.json(new ApiResponse(201, agentProfile, "Agent profile created successfully"));
   });
 }

@@ -30,7 +30,6 @@ class UploadService {
       return getPublicUrl(key);
     });
 
-
     return Promise.all(uploadPromises);
   }
 
