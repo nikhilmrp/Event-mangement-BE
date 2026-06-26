@@ -15,7 +15,14 @@ class LocationRepository {
   }
 
   async findByIds(ids: number[]): Promise<Location[]> {
-    return Location.findAll({ where: { id: { [Op.in]: ids }, status: true }, attributes: ["id", "name"] });
+    return Location.findAll({
+      where: { id: { [Op.in]: ids }, status: true },
+      attributes: ["id", "name"],
+    });
+  }
+
+  async findByName(name: string): Promise<Location | null> {
+    return Location.findOne({ where: { name, status: true } });
   }
 }
 

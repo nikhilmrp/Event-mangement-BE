@@ -21,9 +21,18 @@ class VendorCategoryController {
     if (isNaN(vendorTypeId)) {
       throw ApiError.badRequest("Invalid vendor type id");
     }
-    const result = await vendorCategoryService.getVendorCategoriesByVendorTypeId(Number(req.params.vendor_type_id));
+    const result = await vendorCategoryService.getVendorCategoriesByVendorTypeId(
+      Number(req.params.vendor_type_id),
+    );
     logger.info("Vendor categories fetched successfully", result);
     res.json(new ApiResponse(200, result, "Vendor categories fetched successfully"));
+  });
+
+  getAllVendorCategories = asyncHandler(async (_req: Request, res: Response) => {
+    logger.info("Getting all vendor categories");
+    const result = await vendorCategoryService.getAllVendorCategories();
+    logger.info("All vendor categories fetched successfully", result);
+    res.json(new ApiResponse(200, result, "All vendor categories fetched successfully"));
   });
 }
 

@@ -1,15 +1,10 @@
-import {
-  CreateVendorCategoryDto,
-  VendorCategoryResponseDto,
-} from "@dto/config/vendorcategory.dto";
+import { CreateVendorCategoryDto, VendorCategoryResponseDto } from "@dto/config/vendorcategory.dto";
 import vendorCategoryRepository from "@repositories/config/vendorcategory.repository";
 import vendorTypeRepository from "@repositories/config/vendortype.repository";
 import ApiError from "@utils/ApiError";
 
 class VendorCategoryService {
-  async createVendorCategory(
-    data: CreateVendorCategoryDto,
-  ): Promise<VendorCategoryResponseDto> {
+  async createVendorCategory(data: CreateVendorCategoryDto): Promise<VendorCategoryResponseDto> {
     const vendorType = await vendorTypeRepository.findById(data.vendor_type_id);
     if (!vendorType) {
       throw ApiError.notFound("Vendor type not found");
@@ -34,13 +29,25 @@ class VendorCategoryService {
     };
   }
 
-  async getVendorCategoriesByVendorTypeId(vendorTypeId: number): Promise<VendorCategoryResponseDto[]> {
+  async getVendorCategoriesByVendorTypeId(
+    vendorTypeId: number,
+  ): Promise<VendorCategoryResponseDto[]> {
     const categories = await vendorCategoryRepository.findByVendorType(vendorTypeId);
 
     if (!categories) {
       throw ApiError.notFound("Vendor categories not found");
     }
 
+    return categories.map((category) => {
+      return {
+        ...category.toJSON(),
+        id: category.id,
+      };
+    });
+  }
+
+  async getAllVendorCategories(): Promise<VendorCategoryResponseDto[]> {
+    const categories = await vendorCategoryRepository.findAll();
     return categories.map((category) => {
       return {
         ...category.toJSON(),

@@ -21,7 +21,14 @@ class VendorCategoryRepository {
   }
 
   async findByIds(ids: number[]): Promise<VendorCategory[]> {
-    return VendorCategory.findAll({ where: { id: { [Op.in]: ids }, status: true }, attributes: ["id", "name", "vendor_type_id"] });
+    return VendorCategory.findAll({
+      where: { id: { [Op.in]: ids }, status: true },
+      attributes: ["id", "name", "vendor_type_id"],
+    });
+  }
+
+  async findAll(): Promise<VendorCategory[]> {
+    return VendorCategory.findAll();
   }
 }
 
