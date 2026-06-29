@@ -30,4 +30,4 @@ jobs:
 
             npm install
 
-            pm2 restart eventadmin
+            pm2 start dist/server.js --name event_demo
