@@ -1,6 +1,6 @@
 import { CreateServiceDetailsDto } from "@dto/profile.dto";
 import VendorProfileCategory from "@models/profile/vendor/vendorProfileCategory.Model";
-import { Transaction } from "sequelize";
+import { Op, Transaction } from "sequelize";
 
 class VendorProfileCategoryRepository {
   create = async (
@@ -20,6 +20,15 @@ class VendorProfileCategoryRepository {
 
   findByVendorProfileId = async (vendorProfileId: number): Promise<VendorProfileCategory[]> => {
     return VendorProfileCategory.findAll({ where: { vendor_profile_id: vendorProfileId } });
+  };
+
+  findByVendorProfileIds = async (
+    vendorProfileIds: number[],
+  ): Promise<VendorProfileCategory[]> => {
+    if (!vendorProfileIds.length) return [];
+    return VendorProfileCategory.findAll({
+      where: { vendor_profile_id: { [Op.in]: vendorProfileIds } },
+    });
   };
 }
 

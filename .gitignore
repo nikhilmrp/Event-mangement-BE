@@ -140,3 +140,8 @@ vite.config.ts.timestamp-*
 
 # Postman collection
 postman/*
+
+
+# claude
+
+CLAUDE.md

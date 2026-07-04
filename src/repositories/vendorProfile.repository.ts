@@ -30,6 +30,10 @@ class VendorProfileRepository {
     return VendorProfile.findOne({ where: { user_id } });
   };
 
+  findAll = async (): Promise<VendorProfile[]> => {
+    return VendorProfile.findAll({ where: { profile_completed: true } });
+  };
+
   updateProfileStep = async (
     user_id: number,
     profile_step: number,

@@ -18,6 +18,10 @@ class AgentProfileRepository {
     return AgentProfile.findOne({ where: { user_id } });
   };
 
+  findAll = async (): Promise<AgentProfile[]> => {
+    return AgentProfile.findAll({ where: { profile_completed: true } });
+  };
+
   updateProfileStep = async (
     user_id: number,
     profile_step: number,

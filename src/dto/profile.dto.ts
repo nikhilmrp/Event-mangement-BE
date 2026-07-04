@@ -1,4 +1,5 @@
 import { PricingType } from "@models/profile/vendor/VendorPricing.model";
+import { UserStatus } from "@models/User.model";
 
 export interface CreateAgentProfileDto {
   user_id: number;
@@ -73,4 +74,19 @@ export interface WorkGalleryImage {
 export interface UploadWorkGalleryResponseDto {
   vendor_profile_id: number;
   image_urls: WorkGalleryImage[];
+}
+
+export interface ProfileDetailsResponseDto {
+  id: number;
+  business_name?: string;
+  name?: string;
+  username: string;
+  vendor_type_name?: string;
+  vendor_categories?: string[];
+  status?: UserStatus;
+  email_verified?: boolean;
+  locations: string[];
+  email: string;
+  phone: string;
+  createdAt: Date;
 }

@@ -18,9 +18,5 @@ router.use("/auth", authRoutes);
 router.use("/config", configRoutes);
 router.use("/profile", profileRoutes);
 router.use("/upload", uploadRoutes);
-// Mount your routes here
-// router.use('/auth', authRoutes);
-// router.use('/users', userRoutes);
-// router.use('/products', productRoutes);
 
 export default router;

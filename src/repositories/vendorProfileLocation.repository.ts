@@ -1,5 +1,5 @@
 import VendorProfileLocation from "@models/profile/vendor/vendorProfileLocation.model";
-import { Transaction } from "sequelize";
+import { Op, Transaction } from "sequelize";
 
 class VendorProfileLocationRepository {
   bulkCreateForVendorProfile = async (
@@ -15,6 +15,15 @@ class VendorProfileLocationRepository {
       })),
       tx ? { transaction: tx } : undefined,
     );
+  };
+
+  findByVendorProfileIds = async (
+    vendorProfileIds: number[],
+  ): Promise<VendorProfileLocation[]> => {
+    if (!vendorProfileIds.length) return [];
+    return VendorProfileLocation.findAll({
+      where: { vendor_profile_id: { [Op.in]: vendorProfileIds } },
+    });
   };
 }
 

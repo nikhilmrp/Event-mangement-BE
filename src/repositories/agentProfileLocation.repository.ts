@@ -1,5 +1,5 @@
 import AgentProfileLocation from "@models/profile/agent/AgentProfileLocation.model";
-import { Transaction } from "sequelize";
+import { Op, Transaction } from "sequelize";
 
 class AgentProfileLocationRepository {
   bulkCreateForAgentProfile = async (
@@ -22,6 +22,13 @@ class AgentProfileLocationRepository {
     return AgentProfileLocation.destroy({
       where: { agent_profile_id: agentProfileId },
       ...(tx ? { transaction: tx } : {}),
+    });
+  };
+
+  findByAgentProfileIds = async (agentProfileIds: number[]): Promise<AgentProfileLocation[]> => {
+    if (!agentProfileIds.length) return [];
+    return AgentProfileLocation.findAll({
+      where: { agent_profile_id: { [Op.in]: agentProfileIds } },
     });
   };
 }
