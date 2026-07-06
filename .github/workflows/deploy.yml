@@ -6,13 +6,30 @@ on:
       - dev
 
 jobs:
-  deploy:
+  ci:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Application
+        run: npm run build
+
+  deploy:
+    needs: ci
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -24,10 +41,10 @@ jobs:
 
             git pull origin dev
 
-            npm install
+            npm ci
 
             npm run build
 
-            pm2 restart event_demo || pm2 start /home/event_demo/public_html/dist/server.js --name event_demo
+            pm2 restart event_demo || pm2 start dist/server.js --name event_demo
 
             pm2 save
