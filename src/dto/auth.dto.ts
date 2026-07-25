@@ -18,6 +18,9 @@ export interface AuthUserDto {
   last_name: string;
   role: string;
   status: string;
+  email_verified?: boolean;
+  profile_step?: number;
+  profile_completed?: boolean;
 }
 
 export interface AuthResponseDto {

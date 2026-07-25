@@ -76,6 +76,22 @@ export interface UploadWorkGalleryResponseDto {
   image_urls: WorkGalleryImage[];
 }
 
+export interface AddVendorUnavailabilityDto {
+  user_id: number;
+  unavailable_date: string;
+  status: boolean;
+}
+
+export interface VendorUnavailabilityDto {
+  id: number;
+  unavailable_date: string;
+}
+
+export interface VendorUnavailabilityListResponseDto {
+  vendor_profile_id: number;
+  unavailability: VendorUnavailabilityDto[];
+}
+
 export interface ProfileDetailsResponseDto {
   id: number;
   business_name?: string;
