@@ -1,9 +1,11 @@
 import vendorProfileController from "@controllers/profile/vendorProfile.controller";
+import vendorUnavailabilityController from "@controllers/profile/vendorUnavailability.controller";
 import { authenticate } from "@middleware/auth.middleware";
 import { validate } from "@middleware/validate.middleware";
 import { validateUserRole } from "@middleware/validateUserRole.middleware";
 import { UserRole } from "@models/User.model";
 import {
+  addVendorUnavailabilitySchema,
   createPricingDetailsSchema,
   createServiceDetailsSchema,
   createVendorProfileSchema,
@@ -36,6 +38,17 @@ router.post(
   authenticate,
   validate(uploadWorkGallerySchema),
   vendorProfileController.uploadWorkGalleryImages,
+);
+router.post(
+  "/add-unavailability",
+  authenticate,
+  validate(addVendorUnavailabilitySchema),
+  vendorUnavailabilityController.addUnavailability,
+);
+router.get(
+  "/get-unavailability-by-id/:userId",
+  authenticate,
+  vendorUnavailabilityController.getUnavailabilityByUserId,
 );
 router.use("/bank-details", validateUserRole(UserRole.VENDOR), bankDetailsRoute);
 

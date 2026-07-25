@@ -422,6 +422,50 @@ Same body schema as agent bank details (`POST /api/v1/profile/agent/bank-details
 
 ---
 
+#### `POST /add-unavailability`
+
+Marks or unmarks a date as unavailable for the authenticated vendor (vendor is resolved from the JWT, not the request body). If `status` is `true` the date is added; if `status` is `false` the date is removed (404 if it wasn't marked). Returns the vendor's full current unavailability list.
+
+**Body (JSON):**
+
+| Field              | Type    | Required | Rules                          |
+|--------------------|---------|----------|---------------------------------|
+| `unavailable_date` | string  | Yes      | ISO date (`YYYY-MM-DD`)         |
+| `status`           | boolean | Yes      | `true` to add, `false` to remove |
+
+**Example:**
+
+```json
+{
+  "unavailable_date": "2026-08-01",
+  "status": true
+}
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "vendor_profile_id": 5,
+    "unavailability": [
+      { "id": 1, "unavailable_date": "2026-08-01" }
+    ]
+  },
+  "message": "Vendor unavailability updated successfully",
+  "success": true
+}
+```
+
+---
+
+#### `GET /get-unavailability-by-id/:userId`
+
+Returns the list of unavailable dates for the vendor identified by `userId` (a `users.id`, not a `vendor_profiles.id`). Accessible to any authenticated user, not just the vendor themselves.
+
+---
+
 ## Upload Endpoints
 
 **Prefix:** `/api/v1/upload`  
@@ -551,6 +595,8 @@ POST   /api/v1/profile/vendor/create-service-details                 [Auth]
 POST   /api/v1/profile/vendor/create-pricing-details                 [Auth]
 POST   /api/v1/profile/vendor/upload-work-gallery                    [Auth]
 POST   /api/v1/profile/vendor/bank-details/create-bank-details       [Auth + VENDOR]
+POST   /api/v1/profile/vendor/add-unavailability                     [Auth]
+GET    /api/v1/profile/vendor/get-unavailability-by-id/:userId       [Auth]
 
 POST   /api/v1/upload/images                   [Auth, multipart]
 ```

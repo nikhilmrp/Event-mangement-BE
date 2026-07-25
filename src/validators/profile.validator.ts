@@ -165,6 +165,18 @@ export const createPricingDetailsSchema = Joi.object({
     }),
 }).options({ stripUnknown: true });
 
+export const addVendorUnavailabilitySchema = Joi.object({
+  unavailable_date: Joi.date().iso().required().messages({
+    "any.required": "Unavailable date is required",
+    "date.base": "Unavailable date must be a valid date",
+    "date.format": "Unavailable date must be in YYYY-MM-DD format",
+  }),
+  status: Joi.boolean().required().messages({
+    "any.required": "Status is required",
+    "boolean.base": "Status must be true or false",
+  }),
+}).options({ stripUnknown: true });
+
 export const uploadWorkGallerySchema = Joi.object({
   user_id: Joi.number().integer().positive().required().messages({
     "any.required": "User id is required",
