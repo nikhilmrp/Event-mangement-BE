@@ -466,6 +466,103 @@ Returns the list of unavailable dates for the vendor identified by `userId` (a `
 
 ---
 
+### General Profile
+
+**Prefix:** `/api/v1/profile/general`
+
+**Role required:** `ADMIN`
+
+#### `GET /get-profile-details`
+
+Returns a summary list of every completed profile for the given role (`vendor`, `agent`, or `admin`), passed as a query param: `?role=vendor`.
+
+---
+
+#### `GET /get-profile-details-by-id/:profileId?role=vendor|agent`
+
+Returns everything saved so far for a single vendor or agent profile, based on the `role` query param. `profileId` is the `vendor_profiles.id` or `agent_profiles.id` (not a `users.id`), matching the given role. `role=admin` or an invalid/missing role returns 400.
+
+For `role=vendor`, the response includes business details, service details (vendor type + categories), pricing details, work gallery, and bank details. Sections that haven't been completed yet return an empty array (`pricing_details`, `work_gallery`, `vendor_categories`, `service_locations`) or `null` (`vendor_type`, `bank_details`).
+
+**Response (`role=vendor`):**
+
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "id": 5,
+    "user_id": 2,
+    "business_name": "Perfect Events Co.",
+    "description": "Full-service event planning",
+    "address": "456 Business Park, Delhi",
+    "phone_number": "9123456789",
+    "email": "vendor@example.com",
+    "profile_step": 4,
+    "profile_completed": false,
+    "vendor_type": { "id": 1, "name": "Photography" },
+    "service_locations": [
+      { "id": 1, "name": "Delhi" },
+      { "id": 2, "name": "Mumbai" }
+    ],
+    "vendor_categories": [
+      { "id": 1, "name": "Wedding Photography" }
+    ],
+    "pricing_details": [
+      { "id": 1, "pricing_type": "per_hour", "amount": 500 }
+    ],
+    "work_gallery": [
+      { "id": 1, "image_url": "https://bucket.s3.amazonaws.com/image1.jpg" }
+    ],
+    "bank_details": {
+      "id": 1,
+      "bank_name": "HDFC Bank",
+      "account_holder_name": "Perfect Events Co.",
+      "account_number": "123456789012",
+      "ifsc_code": "HDFC0001234",
+      "branch_name": "Connaught Place",
+      "upi_id": "vendor@upi",
+      "contact_number": "9123456789"
+    }
+  },
+  "message": "Profile details fetched successfully",
+  "success": true
+}
+```
+
+For `role=agent`, the response is a smaller shape — agents don't have business/service/pricing/gallery details, just an address, service locations, and bank details.
+
+**Response (`role=agent`):**
+
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "id": 3,
+    "user_id": 4,
+    "address": "123 Main Street, Mumbai",
+    "profile_step": 2,
+    "profile_completed": true,
+    "service_locations": [
+      { "id": 1, "name": "Mumbai" }
+    ],
+    "bank_details": {
+      "id": 2,
+      "bank_name": "State Bank of India",
+      "account_holder_name": "John Doe",
+      "account_number": "1234567890",
+      "ifsc_code": "SBIN0001234",
+      "branch_name": "Mumbai Main",
+      "upi_id": "john@upi",
+      "contact_number": "9876543210"
+    }
+  },
+  "message": "Profile details fetched successfully",
+  "success": true
+}
+```
+
+---
+
 ## Upload Endpoints
 
 **Prefix:** `/api/v1/upload`  
@@ -597,6 +694,9 @@ POST   /api/v1/profile/vendor/upload-work-gallery                    [Auth]
 POST   /api/v1/profile/vendor/bank-details/create-bank-details       [Auth + VENDOR]
 POST   /api/v1/profile/vendor/add-unavailability                     [Auth]
 GET    /api/v1/profile/vendor/get-unavailability-by-id/:userId       [Auth]
+
+GET    /api/v1/profile/general/get-profile-details                          [Auth + ADMIN]
+GET    /api/v1/profile/general/get-profile-details-by-id/:profileId         [Auth + ADMIN]
 
 POST   /api/v1/upload/images                   [Auth, multipart]
 ```

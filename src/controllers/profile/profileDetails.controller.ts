@@ -15,6 +15,19 @@ class ProfileDetailsController {
     const profileDetails = await profileDetailsService.getProfileDetails(role);
     res.json(new ApiResponse(200, profileDetails, "Profile details fetched successfully"));
   });
+
+  getProfileDetailsById = asyncHandler(async (req: Request, res: Response) => {
+    const profileId = Number(req.params.profileId);
+    if (isNaN(profileId)) {
+      throw ApiError.badRequest("Invalid profile id");
+    }
+    const role = req.query.role as UserRole;
+    if (!Object.values(UserRole).includes(role)) {
+      throw ApiError.badRequest("Invalid role");
+    }
+    const result = await profileDetailsService.getProfileDetailsById(profileId, role);
+    res.json(new ApiResponse(200, result, "Profile details fetched successfully"));
+  });
 }
 
 export default new ProfileDetailsController();

@@ -39,6 +39,7 @@ router.post(
   validate(uploadWorkGallerySchema),
   vendorProfileController.uploadWorkGalleryImages,
 );
+
 router.post(
   "/add-unavailability",
   authenticate,

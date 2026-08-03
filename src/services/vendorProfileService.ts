@@ -7,11 +7,13 @@ import {
   ServiceDetailsResponseDto,
   UploadWorkGalleryDto,
   UploadWorkGalleryResponseDto,
+  VendorProfileFullDetailsResponseDto,
   VendorProfileResponseDto,
 } from "@dto/profile.dto";
 import locationRepository from "@repositories/config/location.repository";
 import vendorcategoryRepository from "@repositories/config/vendorcategory.repository";
 import vendortypeRepository from "@repositories/config/vendortype.repository";
+import bankDetailsRepository from "@repositories/general/bankDetails.repository";
 import VendorGalleryRespository from "@repositories/VendorGallery.respository";
 import vendorPricingRepository from "@repositories/vendorPricing.repository";
 import vendorProfileRepository from "@repositories/vendorProfile.repository";
@@ -161,6 +163,73 @@ class VendorProfileService {
         })),
       };
     });
+  };
+
+  getVendorProfileDetailsById = async (
+    profileId: number,
+  ): Promise<VendorProfileFullDetailsResponseDto> => {
+    const vendorProfile = await vendorProfileRepository.findById(profileId);
+    if (!vendorProfile) {
+      throw ApiError.notFound("Vendor profile not found");
+    }
+
+    const [categoryLinks, locationLinks, pricingDetails, galleryImages, bankDetails, vendorType] =
+      await Promise.all([
+        vendorProfileCategoryRepository.findByVendorProfileId(vendorProfile.id),
+        VendorProfileLocationRepository.findByVendorProfileIds([vendorProfile.id]),
+        vendorPricingRepository.findByVendorProfileId(vendorProfile.id),
+        VendorGalleryRespository.findByVendorProfileId(vendorProfile.id),
+        bankDetailsRepository.findByUserId(vendorProfile.user_id),
+        vendorProfile.vendor_type_id
+          ? vendortypeRepository.findById(vendorProfile.vendor_type_id)
+          : null,
+      ]);
+
+    const [categories, locations] = await Promise.all([
+      vendorcategoryRepository.findByIds(categoryLinks.map((c) => c.vendor_category_id)),
+      locationRepository.findByIds(locationLinks.map((l) => l.location_id)),
+    ]);
+    const categoryNameById = new Map(categories.map((c) => [c.id, c.name]));
+    const locationNameById = new Map(locations.map((l) => [l.id, l.name]));
+
+    return {
+      id: vendorProfile.id,
+      user_id: vendorProfile.user_id,
+      business_name: vendorProfile.business_name,
+      description: vendorProfile.description,
+      address: vendorProfile.address,
+      phone_number: vendorProfile.phone_number,
+      email: vendorProfile.email,
+      profile_step: vendorProfile.profile_step,
+      profile_completed: vendorProfile.profile_completed,
+      vendor_type: vendorType ? { id: vendorType.id, name: vendorType.name } : null,
+      service_locations: locationLinks.map((l) => ({
+        id: l.location_id,
+        name: locationNameById.get(l.location_id) ?? "",
+      })),
+      vendor_categories: categoryLinks.map((c) => ({
+        id: c.vendor_category_id,
+        name: categoryNameById.get(c.vendor_category_id) ?? "",
+      })),
+      pricing_details: pricingDetails.map((p) => ({
+        id: p.id,
+        pricing_type: p.pricing_type,
+        amount: p.amount,
+      })),
+      work_gallery: galleryImages.map((g) => ({ id: g.id, image_url: g.image_url })),
+      bank_details: bankDetails
+        ? {
+            id: bankDetails.id,
+            bank_name: bankDetails.bank_name,
+            account_holder_name: bankDetails.account_holder_name,
+            account_number: bankDetails.account_number,
+            ifsc_code: bankDetails.ifsc_code,
+            branch_name: bankDetails.branch_name,
+            upi_id: bankDetails.upi_id,
+            contact_number: bankDetails.contact_number,
+          }
+        : null,
+    };
   };
 }
 
