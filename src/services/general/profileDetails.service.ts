@@ -1,14 +1,21 @@
-import { ProfileDetailsResponseDto } from "@dto/profile.dto";
+import {
+  AgentProfileFullDetailsResponseDto,
+  ProfileDetailsResponseDto,
+  VendorProfileFullDetailsResponseDto,
+} from "@dto/profile.dto";
 import { UserRole } from "@models/User.model";
 import agentProfileLocationRepository from "@repositories/agentProfileLocation.repository";
 import agentProfileRepository from "@repositories/agentProfile.repository";
 import locationRepository from "@repositories/config/location.repository";
 import vendorCategoryRepository from "@repositories/config/vendorcategory.repository";
 import vendorTypeRepository from "@repositories/config/vendortype.repository";
+import bankDetailsRepository from "@repositories/general/bankDetails.repository";
 import userRepository from "@repositories/user.repository";
 import vendorProfileCategoryRepository from "@repositories/vendorProfileCategory.repository";
 import vendorProfileLocationRepository from "@repositories/vendorProfileLocation.repository";
 import vendorProfileRepository from "@repositories/vendorProfile.repository";
+import vendorProfileService from "@services/vendorProfileService";
+import ApiError from "@utils/ApiError";
 
 class ProfileDetailsService {
   getProfileDetails = async (role: UserRole): Promise<ProfileDetailsResponseDto[]> => {
@@ -19,6 +26,59 @@ class ProfileDetailsService {
       return this.getAgentProfileDetails();
     }
     return this.getAdminProfileDetails();
+  };
+
+  getProfileDetailsById = async (
+    profileId: number,
+    role: UserRole,
+  ): Promise<VendorProfileFullDetailsResponseDto | AgentProfileFullDetailsResponseDto> => {
+    if (role === UserRole.VENDOR) {
+      return vendorProfileService.getVendorProfileDetailsById(profileId);
+    }
+    if (role === UserRole.AGENT) {
+      return this.getAgentProfileDetailsById(profileId);
+    }
+    throw ApiError.badRequest("Role must be vendor or agent");
+  };
+
+  private getAgentProfileDetailsById = async (
+    profileId: number,
+  ): Promise<AgentProfileFullDetailsResponseDto> => {
+    const agentProfile = await agentProfileRepository.findById(profileId);
+    if (!agentProfile) {
+      throw ApiError.notFound("Agent profile not found");
+    }
+
+    const [locationLinks, bankDetails] = await Promise.all([
+      agentProfileLocationRepository.findByAgentProfileIds([agentProfile.id]),
+      bankDetailsRepository.findByUserId(agentProfile.user_id),
+    ]);
+    const locations = await locationRepository.findByIds(locationLinks.map((l) => l.location_id));
+    const locationNameById = new Map(locations.map((l) => [l.id, l.name]));
+
+    return {
+      id: agentProfile.id,
+      user_id: agentProfile.user_id,
+      address: agentProfile.address,
+      profile_step: agentProfile.profile_step,
+      profile_completed: agentProfile.profile_completed,
+      service_locations: locationLinks.map((l) => ({
+        id: l.location_id,
+        name: locationNameById.get(l.location_id) ?? "",
+      })),
+      bank_details: bankDetails
+        ? {
+            id: bankDetails.id,
+            bank_name: bankDetails.bank_name,
+            account_holder_name: bankDetails.account_holder_name,
+            account_number: bankDetails.account_number,
+            ifsc_code: bankDetails.ifsc_code,
+            branch_name: bankDetails.branch_name,
+            upi_id: bankDetails.upi_id,
+            contact_number: bankDetails.contact_number,
+          }
+        : null,
+    };
   };
 
   private getVendorProfileDetails = async (): Promise<ProfileDetailsResponseDto[]> => {

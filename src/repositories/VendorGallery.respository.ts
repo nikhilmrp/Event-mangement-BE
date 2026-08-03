@@ -8,6 +8,10 @@ class VendorGalleryRepository {
   ): Promise<VendorGallery[]> => {
     return VendorGallery.bulkCreate(data, tx ? { transaction: tx } : undefined);
   };
+
+  findByVendorProfileId = async (vendorProfileId: number): Promise<VendorGallery[]> => {
+    return VendorGallery.findAll({ where: { vendor_profile_id: vendorProfileId } });
+  };
 }
 
 export default new VendorGalleryRepository();

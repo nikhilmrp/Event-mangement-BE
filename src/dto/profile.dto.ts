@@ -92,6 +92,50 @@ export interface VendorUnavailabilityListResponseDto {
   unavailability: VendorUnavailabilityDto[];
 }
 
+export interface IdNameDto {
+  id: number;
+  name: string;
+}
+
+export interface BankDetailsFullDto {
+  id: number;
+  bank_name: string;
+  account_holder_name: string;
+  account_number: string;
+  ifsc_code: string;
+  branch_name: string;
+  upi_id: string;
+  contact_number: string;
+}
+
+export interface AgentProfileFullDetailsResponseDto {
+  id: number;
+  user_id: number;
+  address: string;
+  profile_step: number;
+  profile_completed: boolean;
+  service_locations: IdNameDto[];
+  bank_details: BankDetailsFullDto | null;
+}
+
+export interface VendorProfileFullDetailsResponseDto {
+  id: number;
+  user_id: number;
+  business_name: string;
+  description: string;
+  address: string;
+  phone_number: string;
+  email: string;
+  profile_step: number;
+  profile_completed: boolean;
+  vendor_type: IdNameDto | null;
+  service_locations: IdNameDto[];
+  vendor_categories: IdNameDto[];
+  pricing_details: PricingDetails[];
+  work_gallery: WorkGalleryImage[];
+  bank_details: BankDetailsFullDto | null;
+}
+
 export interface ProfileDetailsResponseDto {
   id: number;
   business_name?: string;

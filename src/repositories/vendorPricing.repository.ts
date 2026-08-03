@@ -16,6 +16,10 @@ class VendorPricingRepository {
       { transaction: tx },
     );
   };
+
+  findByVendorProfileId = async (vendorProfileId: number): Promise<VendorPricing[]> => {
+    return VendorPricing.findAll({ where: { vendor_profile_id: vendorProfileId } });
+  };
 }
 
 export default new VendorPricingRepository();
