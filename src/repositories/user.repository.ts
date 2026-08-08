@@ -15,13 +15,21 @@ class UserRepository {
     return await User.findByPk(user_id);
   }
 
-  async findByRole(role: UserRole): Promise<User[]> {
-    return await User.findAll({ where: { role } });
+  async findByRole(role: UserRole, emailVerified?: boolean): Promise<User[]> {
+    const where: { role: UserRole; email_verified?: boolean } = { role };
+    if (emailVerified !== undefined) {
+      where.email_verified = emailVerified;
+    }
+    return await User.findAll({ where });
   }
 
   async findByIds(ids: number[]): Promise<User[]> {
     if (!ids.length) return [];
     return await User.findAll({ where: { id: { [Op.in]: ids } } });
+  }
+
+  async updateById(id: number, data: Partial<{ email_verified: boolean }>): Promise<void> {
+    await User.update(data, { where: { id } });
   }
 }
 

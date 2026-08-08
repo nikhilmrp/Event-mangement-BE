@@ -476,6 +476,8 @@ Returns the list of unavailable dates for the vendor identified by `userId` (a `
 
 Returns a summary list of every completed profile for the given role (`vendor`, `agent`, or `admin`), passed as a query param: `?role=vendor`.
 
+Optionally filter by verification status with `?email_verified=true` or `?email_verified=false`. Any other value for `email_verified` returns 400. When omitted, profiles are returned regardless of verification status.
+
 ---
 
 #### `GET /get-profile-details-by-id/:profileId?role=vendor|agent`
@@ -557,6 +559,26 @@ For `role=agent`, the response is a smaller shape — agents don't have business
     }
   },
   "message": "Profile details fetched successfully",
+  "success": true
+}
+```
+
+---
+
+#### `PATCH /approve-user-profile/:userId`
+
+Marks the user identified by `userId` (a `users.id`) as email-verified, setting `email_verified` to `true`. Returns 404 if the user doesn't exist, 409 if `email_verified` is already `true`, 400 if `userId` isn't numeric.
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "id": 2,
+    "email_verified": true
+  },
+  "message": "User profile approved successfully",
   "success": true
 }
 ```
@@ -697,6 +719,7 @@ GET    /api/v1/profile/vendor/get-unavailability-by-id/:userId       [Auth]
 
 GET    /api/v1/profile/general/get-profile-details                          [Auth + ADMIN]
 GET    /api/v1/profile/general/get-profile-details-by-id/:profileId         [Auth + ADMIN]
+PATCH  /api/v1/profile/general/approve-user-profile/:userId                 [Auth + ADMIN]
 
 POST   /api/v1/upload/images                   [Auth, multipart]
 ```
