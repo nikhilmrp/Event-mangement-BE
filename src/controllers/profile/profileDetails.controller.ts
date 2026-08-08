@@ -12,7 +12,16 @@ class ProfileDetailsController {
       throw ApiError.badRequest("Invalid role");
     }
 
-    const profileDetails = await profileDetailsService.getProfileDetails(role);
+    const emailVerifiedParam = req.query.email_verified;
+    let emailVerified: boolean | undefined;
+    if (emailVerifiedParam !== undefined) {
+      if (emailVerifiedParam !== "true" && emailVerifiedParam !== "false") {
+        throw ApiError.badRequest("Invalid email_verified value");
+      }
+      emailVerified = emailVerifiedParam === "true";
+    }
+
+    const profileDetails = await profileDetailsService.getProfileDetails(role, emailVerified);
     res.json(new ApiResponse(200, profileDetails, "Profile details fetched successfully"));
   });
 
@@ -27,6 +36,15 @@ class ProfileDetailsController {
     }
     const result = await profileDetailsService.getProfileDetailsById(profileId, role);
     res.json(new ApiResponse(200, result, "Profile details fetched successfully"));
+  });
+
+  approveUserProfile = asyncHandler(async (req: Request, res: Response) => {
+    const userId = Number(req.params.userId);
+    if (isNaN(userId)) {
+      throw ApiError.badRequest("Invalid user id");
+    }
+    const result = await profileDetailsService.approveUserProfile(userId);
+    res.json(new ApiResponse(200, result, "User profile approved successfully"));
   });
 }
 

@@ -18,14 +18,17 @@ import vendorProfileService from "@services/vendorProfileService";
 import ApiError from "@utils/ApiError";
 
 class ProfileDetailsService {
-  getProfileDetails = async (role: UserRole): Promise<ProfileDetailsResponseDto[]> => {
+  getProfileDetails = async (
+    role: UserRole,
+    emailVerified?: boolean,
+  ): Promise<ProfileDetailsResponseDto[]> => {
     if (role === UserRole.VENDOR) {
-      return this.getVendorProfileDetails();
+      return this.getVendorProfileDetails(emailVerified);
     }
     if (role === UserRole.AGENT) {
-      return this.getAgentProfileDetails();
+      return this.getAgentProfileDetails(emailVerified);
     }
-    return this.getAdminProfileDetails();
+    return this.getAdminProfileDetails(emailVerified);
   };
 
   getProfileDetailsById = async (
@@ -39,6 +42,19 @@ class ProfileDetailsService {
       return this.getAgentProfileDetailsById(profileId);
     }
     throw ApiError.badRequest("Role must be vendor or agent");
+  };
+
+  approveUserProfile = async (userId: number): Promise<{ id: number; email_verified: boolean }> => {
+    const user = await userRepository.findByUserId(userId);
+    if (!user) {
+      throw ApiError.notFound("User not found");
+    }
+    if (user.email_verified) {
+      throw ApiError.conflict("User is already verified");
+    }
+
+    await userRepository.updateById(userId, { email_verified: true });
+    return { id: userId, email_verified: true };
   };
 
   private getAgentProfileDetailsById = async (
@@ -81,7 +97,9 @@ class ProfileDetailsService {
     };
   };
 
-  private getVendorProfileDetails = async (): Promise<ProfileDetailsResponseDto[]> => {
+  private getVendorProfileDetails = async (
+    emailVerified?: boolean,
+  ): Promise<ProfileDetailsResponseDto[]> => {
     const vendorProfiles = await vendorProfileRepository.findAll();
     const vendorProfileIds = vendorProfiles.map((vendorProfile) => vendorProfile.id);
     const vendorTypeIds = [
@@ -103,27 +121,35 @@ class ProfileDetailsService {
       vendorTypes.map((vendorType) => [vendorType.id, vendorType.name]),
     );
 
-    return vendorProfiles.map((vendorProfile) => {
-      const user = userById.get(vendorProfile.user_id);
-      return {
-        id: vendorProfile.id,
-        business_name: vendorProfile.business_name,
-        username: user ? `${user.first_name} ${user.last_name}` : "",
-        vendor_type_name: vendorProfile.vendor_type_id
-          ? (vendorTypeNameById.get(vendorProfile.vendor_type_id) ?? "")
-          : "",
-        vendor_categories: categoryNamesByProfileId.get(vendorProfile.id) ?? [],
-        status: user?.status,
-        locations: locationNamesByProfileId.get(vendorProfile.id) ?? [],
-        email: vendorProfile.email,
-        phone: vendorProfile.phone_number,
-        email_verified: user?.email_verified,
-        createdAt: vendorProfile.created_at,
-      };
-    });
+    return vendorProfiles
+      .filter((vendorProfile) => {
+        if (emailVerified === undefined) return true;
+        return userById.get(vendorProfile.user_id)?.email_verified === emailVerified;
+      })
+      .map((vendorProfile) => {
+        const user = userById.get(vendorProfile.user_id);
+        return {
+          id: vendorProfile.id,
+          userId: user?.id,
+          business_name: vendorProfile.business_name,
+          username: user ? `${user.first_name} ${user.last_name}` : "",
+          vendor_type_name: vendorProfile.vendor_type_id
+            ? (vendorTypeNameById.get(vendorProfile.vendor_type_id) ?? "")
+            : "",
+          vendor_categories: categoryNamesByProfileId.get(vendorProfile.id) ?? [],
+          status: user?.status,
+          locations: locationNamesByProfileId.get(vendorProfile.id) ?? [],
+          email: vendorProfile.email,
+          phone: vendorProfile.phone_number,
+          email_verified: user?.email_verified,
+          createdAt: vendorProfile.created_at,
+        };
+      });
   };
 
-  private getAgentProfileDetails = async (): Promise<ProfileDetailsResponseDto[]> => {
+  private getAgentProfileDetails = async (
+    emailVerified?: boolean,
+  ): Promise<ProfileDetailsResponseDto[]> => {
     const agentProfiles = await agentProfileRepository.findAll();
     const agentProfileIds = agentProfiles.map((agentProfile) => agentProfile.id);
     const [locationNamesByProfileId, users] = await Promise.all([
@@ -132,23 +158,31 @@ class ProfileDetailsService {
     ]);
     const userById = new Map(users.map((user) => [user.id, user]));
 
-    return agentProfiles.map((agentProfile) => {
-      const user = userById.get(agentProfile.user_id);
-      return {
-        id: agentProfile.id,
-        username: user ? `${user.first_name} ${user.last_name}` : "",
-        status: user?.status,
-        locations: locationNamesByProfileId.get(agentProfile.id) ?? [],
-        email: user?.email ?? "",
-        phone: user?.phone ?? "",
-        email_verified: user?.email_verified,
-        createdAt: agentProfile.created_at,
-      };
-    });
+    return agentProfiles
+      .filter((agentProfile) => {
+        if (emailVerified === undefined) return true;
+        return userById.get(agentProfile.user_id)?.email_verified === emailVerified;
+      })
+      .map((agentProfile) => {
+        const user = userById.get(agentProfile.user_id);
+        return {
+          id: agentProfile.id,
+          username: user ? `${user.first_name} ${user.last_name}` : "",
+          userId: user?.id,
+          status: user?.status,
+          locations: locationNamesByProfileId.get(agentProfile.id) ?? [],
+          email: user?.email ?? "",
+          phone: user?.phone ?? "",
+          email_verified: user?.email_verified,
+          createdAt: agentProfile.created_at,
+        };
+      });
   };
 
-  private getAdminProfileDetails = async (): Promise<ProfileDetailsResponseDto[]> => {
-    const admins = await userRepository.findByRole(UserRole.ADMIN);
+  private getAdminProfileDetails = async (
+    emailVerified?: boolean,
+  ): Promise<ProfileDetailsResponseDto[]> => {
+    const admins = await userRepository.findByRole(UserRole.ADMIN, emailVerified);
 
     return admins.map((admin) => {
       const fullName = `${admin.first_name} ${admin.last_name}`;
@@ -159,6 +193,7 @@ class ProfileDetailsService {
         locations: [],
         email: admin.email,
         phone: admin.phone,
+        email_verified: admin.email_verified,
         createdAt: admin.created_at,
       };
     });
