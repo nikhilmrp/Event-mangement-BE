@@ -10,11 +10,6 @@ const router = Router();
 
 router.use("/agent", authenticate, agentProfileRoutes);
 router.use("/vendor", authenticate, vendorProfileRoutes);
-router.use(
-  "/general",
-  authenticate,
-  validateUserRole(UserRole.ADMIN),
-  profileDetailsRoutes,
-);
+router.use("/general", authenticate, profileDetailsRoutes);
 
 export default router;
