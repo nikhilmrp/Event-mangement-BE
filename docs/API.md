@@ -21,11 +21,11 @@
 
 ## General
 
-| Method | Endpoint   | Auth | Description              |
-|--------|------------|------|--------------------------|
-| `GET`  | `/`        | No   | Welcome message          |
-| `GET`  | `/health`  | No   | Server health check      |
-| `GET`  | `/api/v1`  | No   | API v1 info              |
+| Method | Endpoint  | Auth | Description         |
+| ------ | --------- | ---- | ------------------- |
+| `GET`  | `/`       | No   | Welcome message     |
+| `GET`  | `/health` | No   | Server health check |
+| `GET`  | `/api/v1` | No   | API v1 info         |
 
 ### Health check response
 
@@ -66,14 +66,14 @@ Register a new admin user.
 
 **Body (JSON):**
 
-| Field              | Type   | Required | Rules                                                                 |
-|--------------------|--------|----------|-----------------------------------------------------------------------|
-| `email`            | string | Yes      | Valid email address                                                   |
-| `password`         | string | Yes      | Min 8 chars; uppercase, lowercase, digit, special char (`@$!%*?&`)    |
-| `first_name`       | string | Yes      | Letters and spaces only, 1–100 chars                                  |
-| `last_name`        | string | Yes      | Letters and spaces only, 1–100 chars                                  |
-| `phone`            | string | Yes      | 10-digit Indian number (starts with 6–9)                              |
-| `confirm_password` | string | No       | Must match `password` if provided                                     |
+| Field              | Type   | Required | Rules                                                              |
+| ------------------ | ------ | -------- | ------------------------------------------------------------------ |
+| `email`            | string | Yes      | Valid email address                                                |
+| `password`         | string | Yes      | Min 8 chars; uppercase, lowercase, digit, special char (`@$!%*?&`) |
+| `first_name`       | string | Yes      | Letters and spaces only, 1–100 chars                               |
+| `last_name`        | string | Yes      | Letters and spaces only, 1–100 chars                               |
+| `phone`            | string | Yes      | 10-digit Indian number (starts with 6–9)                           |
+| `confirm_password` | string | No       | Must match `password` if provided                                  |
 
 **Example:**
 
@@ -94,7 +94,7 @@ Register a new admin user.
 **Body (JSON):**
 
 | Field      | Type   | Required |
-|------------|--------|----------|
+| ---------- | ------ | -------- |
 | `email`    | string | Yes      |
 | `password` | string | Yes      |
 
@@ -151,10 +151,10 @@ No body required. Clears the `access_token` cookie.
 
 **Body (JSON):**
 
-| Field    | Type    | Required | Rules              |
-|----------|---------|----------|--------------------|
-| `name`   | string  | Yes      | 1–255 characters   |
-| `status` | boolean | Yes      | Active/inactive    |
+| Field    | Type    | Required | Rules            |
+| -------- | ------- | -------- | ---------------- |
+| `name`   | string  | Yes      | 1–255 characters |
+| `status` | boolean | Yes      | Active/inactive  |
 
 **Example:**
 
@@ -179,11 +179,11 @@ No parameters. Returns all locations.
 
 **Body (JSON):**
 
-| Field                   | Type    | Required | Rules           |
-|-------------------------|---------|----------|-----------------|
+| Field                   | Type    | Required | Rules            |
+| ----------------------- | ------- | -------- | ---------------- |
 | `name`                  | string  | Yes      | 2–150 characters |
-| `commission_percentage` | number  | Yes      | 0–100           |
-| `status`                | boolean | Yes      | Active/inactive |
+| `commission_percentage` | number  | Yes      | 0–100            |
+| `status`                | boolean | Yes      | Active/inactive  |
 
 **Example:**
 
@@ -209,11 +209,11 @@ No parameters. Returns all vendor types.
 
 **Body (JSON):**
 
-| Field            | Type    | Required | Rules              |
-|------------------|---------|----------|--------------------|
-| `vendor_type_id` | number  | Yes      | Positive integer   |
-| `name`           | string  | Yes      | 2–150 characters   |
-| `status`         | boolean | Yes      | Active/inactive    |
+| Field            | Type    | Required | Rules            |
+| ---------------- | ------- | -------- | ---------------- |
+| `vendor_type_id` | number  | Yes      | Positive integer |
+| `name`           | string  | Yes      | 2–150 characters |
+| `status`         | boolean | Yes      | Active/inactive  |
 
 **Example:**
 
@@ -232,7 +232,7 @@ No parameters. Returns all vendor types.
 **Path params:**
 
 | Param            | Type   | Required | Rules            |
-|------------------|--------|----------|------------------|
+| ---------------- | ------ | -------- | ---------------- |
 | `vendor_type_id` | number | Yes      | Positive integer |
 
 **Example:** `GET /api/v1/config/get-vendor-catogories-by-vendor-type-id/1`
@@ -252,10 +252,10 @@ No parameters. Returns all vendor types.
 
 **Body (JSON):**
 
-| Field               | Type     | Required | Rules                          |
-|---------------------|----------|----------|--------------------------------|
-| `user_id`           | number   | Yes      | Positive integer               |
-| `address`           | string   | Yes      | 1–255 characters               |
+| Field               | Type     | Required | Rules                            |
+| ------------------- | -------- | -------- | -------------------------------- |
+| `user_id`           | number   | Yes      | Positive integer                 |
+| `address`           | string   | Yes      | 1–255 characters                 |
 | `service_locations` | number[] | Yes      | Array of location IDs (integers) |
 
 **Example:**
@@ -277,7 +277,7 @@ No parameters. Returns all vendor types.
 **Body (JSON):**
 
 | Field                 | Type   | Required | Rules            |
-|-----------------------|--------|----------|------------------|
+| --------------------- | ------ | -------- | ---------------- |
 | `user_id`             | number | Yes      | Positive integer |
 | `account_holder_name` | string | Yes      | 1–255 characters |
 | `account_number`      | string | Yes      | 1–255 characters |
@@ -313,7 +313,7 @@ No parameters. Returns all vendor types.
 **Body (JSON):**
 
 | Field               | Type     | Required | Rules                              |
-|---------------------|----------|----------|------------------------------------|
+| ------------------- | -------- | -------- | ---------------------------------- |
 | `user_id`           | number   | Yes      | Positive integer                   |
 | `business_name`     | string   | Yes      | 1–255 characters                   |
 | `description`       | string   | Yes      | 1–255 characters                   |
@@ -342,11 +342,11 @@ No parameters. Returns all vendor types.
 
 **Body (JSON):**
 
-| Field                | Type     | Required | Rules                    |
-|----------------------|----------|----------|--------------------------|
-| `user_id`            | number   | Yes      | Positive integer         |
-| `vendor_type_id`     | number   | Yes      | Positive integer         |
-| `vendor_categoryids` | number[] | Yes      | Array of category IDs    |
+| Field                | Type     | Required | Rules                 |
+| -------------------- | -------- | -------- | --------------------- |
+| `user_id`            | number   | Yes      | Positive integer      |
+| `vendor_type_id`     | number   | Yes      | Positive integer      |
+| `vendor_categoryids` | number[] | Yes      | Array of category IDs |
 
 **Example:**
 
@@ -364,17 +364,17 @@ No parameters. Returns all vendor types.
 
 **Body (JSON):**
 
-| Field             | Type   | Required | Rules                                      |
-|-------------------|--------|----------|--------------------------------------------|
-| `user_id`         | number | Yes      | Positive integer                           |
-| `pricing_details` | array  | Yes      | Array of pricing objects (see below)       |
+| Field             | Type   | Required | Rules                                |
+| ----------------- | ------ | -------- | ------------------------------------ |
+| `user_id`         | number | Yes      | Positive integer                     |
+| `pricing_details` | array  | Yes      | Array of pricing objects (see below) |
 
 **Pricing object:**
 
-| Field          | Type   | Required | Allowed values                          |
-|----------------|--------|----------|-----------------------------------------|
-| `pricing_type` | string | Yes      | `per_hour`, `per_day`, `per_event`      |
-| `amount`       | number | Yes      | Positive number                         |
+| Field          | Type   | Required | Allowed values                     |
+| -------------- | ------ | -------- | ---------------------------------- |
+| `pricing_type` | string | Yes      | `per_hour`, `per_day`, `per_event` |
+| `amount`       | number | Yes      | Positive number                    |
 
 **Example:**
 
@@ -395,10 +395,10 @@ No parameters. Returns all vendor types.
 
 **Body (JSON):**
 
-| Field        | Type     | Required | Rules                    |
-|--------------|----------|----------|--------------------------|
-| `user_id`    | number   | Yes      | Positive integer         |
-| `image_urls` | string[] | Yes      | Array of valid URIs      |
+| Field        | Type     | Required | Rules               |
+| ------------ | -------- | -------- | ------------------- |
+| `user_id`    | number   | Yes      | Positive integer    |
+| `image_urls` | string[] | Yes      | Array of valid URIs |
 
 **Example:**
 
@@ -428,9 +428,9 @@ Marks or unmarks a date as unavailable for the authenticated vendor (vendor is r
 
 **Body (JSON):**
 
-| Field              | Type    | Required | Rules                          |
-|--------------------|---------|----------|---------------------------------|
-| `unavailable_date` | string  | Yes      | ISO date (`YYYY-MM-DD`)         |
+| Field              | Type    | Required | Rules                            |
+| ------------------ | ------- | -------- | -------------------------------- |
+| `unavailable_date` | string  | Yes      | ISO date (`YYYY-MM-DD`)          |
 | `status`           | boolean | Yes      | `true` to add, `false` to remove |
 
 **Example:**
@@ -449,9 +449,7 @@ Marks or unmarks a date as unavailable for the authenticated vendor (vendor is r
   "statusCode": 200,
   "data": {
     "vendor_profile_id": 5,
-    "unavailability": [
-      { "id": 1, "unavailable_date": "2026-08-01" }
-    ]
+    "unavailability": [{ "id": 1, "unavailable_date": "2026-08-01" }]
   },
   "message": "Vendor unavailability updated successfully",
   "success": true
@@ -506,15 +504,9 @@ For `role=vendor`, the response includes business details, service details (vend
       { "id": 1, "name": "Delhi" },
       { "id": 2, "name": "Mumbai" }
     ],
-    "vendor_categories": [
-      { "id": 1, "name": "Wedding Photography" }
-    ],
-    "pricing_details": [
-      { "id": 1, "pricing_type": "per_hour", "amount": 500 }
-    ],
-    "work_gallery": [
-      { "id": 1, "image_url": "https://bucket.s3.amazonaws.com/image1.jpg" }
-    ],
+    "vendor_categories": [{ "id": 1, "name": "Wedding Photography" }],
+    "pricing_details": [{ "id": 1, "pricing_type": "per_hour", "amount": 500 }],
+    "work_gallery": [{ "id": 1, "image_url": "https://bucket.s3.amazonaws.com/image1.jpg" }],
     "bank_details": {
       "id": 1,
       "bank_name": "HDFC Bank",
@@ -544,9 +536,7 @@ For `role=agent`, the response is a smaller shape — agents don't have business
     "address": "123 Main Street, Mumbai",
     "profile_step": 2,
     "profile_completed": true,
-    "service_locations": [
-      { "id": 1, "name": "Mumbai" }
-    ],
+    "service_locations": [{ "id": 1, "name": "Mumbai" }],
     "bank_details": {
       "id": 2,
       "bank_name": "State Bank of India",
@@ -596,10 +586,10 @@ Upload images to S3.
 
 **Content-Type:** `multipart/form-data`
 
-| Field    | Type   | Required | Rules                                                        |
-|----------|--------|----------|--------------------------------------------------------------|
-| `images` | file[] | Yes      | Up to 10 files; jpeg, png, webp, gif; max 5 MB per file      |
-| `folder` | string | No       | S3 folder name; defaults to `"Development_s3"`               |
+| Field    | Type   | Required | Rules                                                   |
+| -------- | ------ | -------- | ------------------------------------------------------- |
+| `images` | file[] | Yes      | Up to 10 files; jpeg, png, webp, gif; max 5 MB per file |
+| `folder` | string | No       | S3 folder name; defaults to `"Development_s3"`          |
 
 **Response:**
 
@@ -609,9 +599,7 @@ Upload images to S3.
   "statusCode": 200,
   "message": "Images uploaded successfully",
   "data": {
-    "urls": [
-      "https://bucket.s3.amazonaws.com/Development_s3/image1.jpg"
-    ]
+    "urls": ["https://bucket.s3.amazonaws.com/Development_s3/image1.jpg"]
   }
 }
 ```
@@ -644,24 +632,24 @@ All API responses follow a consistent structure via `ApiResponse`:
 
 Common status codes:
 
-| Code | Meaning                    |
-|------|----------------------------|
-| 200  | Success                    |
-| 201  | Created                    |
-| 400  | Bad request / validation   |
-| 401  | Unauthorized               |
-| 404  | Route not found            |
-| 500  | Internal server error      |
+| Code | Meaning                  |
+| ---- | ------------------------ |
+| 200  | Success                  |
+| 201  | Created                  |
+| 400  | Bad request / validation |
+| 401  | Unauthorized             |
+| 404  | Route not found          |
+| 500  | Internal server error    |
 
 ---
 
 ## Rate Limiting
 
-| Scope                              | Limit                    |
-|------------------------------------|--------------------------|
-| All `/api/*` routes                | 100 requests / 15 min    |
-| `POST /api/v1/auth/admin-login`    | 5 attempts / 15 min      |
-| `POST /api/v1/auth/register-admin` | 5 attempts / 15 min      |
+| Scope                              | Limit                 |
+| ---------------------------------- | --------------------- |
+| All `/api/*` routes                | 100 requests / 15 min |
+| `POST /api/v1/auth/admin-login`    | 5 attempts / 15 min   |
+| `POST /api/v1/auth/register-admin` | 5 attempts / 15 min   |
 
 Failed login attempts count toward the limit; successful logins do not.
 
@@ -671,12 +659,12 @@ Failed login attempts count toward the limit; successful logins do not.
 
 The following Joi schemas exist in `src/validators/auth.validator.ts` but are **not yet connected to any route**:
 
-| Schema                 | Body fields                                                              |
-|------------------------|--------------------------------------------------------------------------|
-| `updateProfileSchema`  | `first_name`, `last_name`, `phone` (at least one required)               |
-| `changePasswordSchema` | `old_password`, `new_password`, `confirm_password`                       |
-| `resetPasswordSchema`  | `token`, `new_password`, `confirm_password`                              |
-| `updateUserStatusSchema` | `status` (`active` \| `inactive` \| `suspended`)                       |
+| Schema                   | Body fields                                                |
+| ------------------------ | ---------------------------------------------------------- |
+| `updateProfileSchema`    | `first_name`, `last_name`, `phone` (at least one required) |
+| `changePasswordSchema`   | `old_password`, `new_password`, `confirm_password`         |
+| `resetPasswordSchema`    | `token`, `new_password`, `confirm_password`                |
+| `updateUserStatusSchema` | `status` (`active` \| `inactive` \| `suspended`)           |
 
 These may be added in future releases.
 
@@ -717,9 +705,9 @@ POST   /api/v1/profile/vendor/bank-details/create-bank-details       [Auth + VEN
 POST   /api/v1/profile/vendor/add-unavailability                     [Auth]
 GET    /api/v1/profile/vendor/get-unavailability-by-id/:userId       [Auth]
 
-GET    /api/v1/profile/general/get-profile-details                          [Auth + ADMIN]
-GET    /api/v1/profile/general/get-profile-details-by-id/:profileId         [Auth + ADMIN]
-PATCH  /api/v1/profile/general/approve-user-profile/:userId                 [Auth + ADMIN]
+GET    /api/v1/profile/general/get-profile-details                          [Auth ]
+GET    /api/v1/profile/general/get-profile-details-by-id/:profileId         [Auth ]
+PATCH  /api/v1/profile/general/approve-user-profile/:userId                 [Auth ]
 
 POST   /api/v1/upload/images                   [Auth, multipart]
 ```
