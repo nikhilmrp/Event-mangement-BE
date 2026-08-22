@@ -21,6 +21,7 @@ export interface AuthUserDto {
   email_verified?: boolean;
   profile_step?: number;
   profile_completed?: boolean;
+  profile_id?: number | null;
 }
 
 export interface AuthResponseDto {
