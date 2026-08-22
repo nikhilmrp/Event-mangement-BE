@@ -98,7 +98,7 @@ Register a new admin user.
 | `email`    | string | Yes      |
 | `password` | string | Yes      |
 
-**Response:** Returns `user` and `token`. Sets `access_token` cookie.
+**Response:** Returns `user` and `token`. Sets `access_token` cookie. `user.profile_id` is the vendor/agent profile's id (`null` for admins, or for a vendor/agent who hasn't created a profile yet).
 
 ---
 

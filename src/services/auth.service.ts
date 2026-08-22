@@ -10,7 +10,7 @@ class AuthService {
   private toAuthResponse(
     user: User,
     token: string,
-    profile?: { profile_step: number; profile_completed: boolean } | null,
+    profile?: { id: number; profile_step: number; profile_completed: boolean } | null,
   ): AuthResponseDto {
     const authUser: AuthUserDto = {
       id: user.id,
@@ -24,6 +24,7 @@ class AuthService {
 
     authUser.profile_step = profile?.profile_step || 0;
     authUser.profile_completed = profile?.profile_completed || false;
+    authUser.profile_id = profile?.id ?? null;
 
     return { user: authUser, token };
   }
@@ -67,7 +68,7 @@ class AuthService {
       role: user.role,
     });
 
-    let profile: { profile_step: number; profile_completed: boolean } | null = null;
+    let profile: { id: number; profile_step: number; profile_completed: boolean } | null = null;
     if (role === UserRole.VENDOR) {
       profile = await vendorProfileRepository.findByUserId(user.id);
     } else if (role === UserRole.AGENT) {
