@@ -13,9 +13,10 @@
 4. [Config Endpoints](#config-endpoints)
 5. [Profile Endpoints](#profile-endpoints)
 6. [Upload Endpoints](#upload-endpoints)
-7. [Response Format](#response-format)
-8. [Rate Limiting](#rate-limiting)
-9. [Unwired Validators](#unwired-validators)
+7. [Agent Client Flow Endpoints](#agent-client-flow-endpoints)
+8. [Response Format](#response-format)
+9. [Rate Limiting](#rate-limiting)
+10. [Unwired Validators](#unwired-validators)
 
 ---
 
@@ -606,6 +607,158 @@ Upload images to S3.
 
 ---
 
+## Agent Client Flow Endpoints
+
+**Prefix:** `/api/v1/agent-clients`  
+**Auth:** Required. **Role required:** `AGENT` or `ADMIN`.
+
+Lets an agent create clients, create events for those clients, browse and assign approved vendors to an event, and confirm the event with a payment receipt. Each step is its own save — clients, events, and vendor selections can be created/edited independently and in any order except where noted.
+
+Clients and events are scoped to the agent that owns them (`agent_profile_id`). **Admins have unrestricted cross-agent access**: `GET`/`PATCH`/vendor-selection/confirm endpoints operate on any agent's data, and `POST` (create) endpoints require an extra `agent_id` field (the target agent's `user_id`) in the body since admin has no `AgentProfile` of their own. Agents never send `agent_id` — it's inferred from their JWT and any value they send is ignored.
+
+An event has a `status` that gates the flow: `draft` → `vendor_selected` (after at least one vendor is saved) → `confirmed` (after the receipt is uploaded and confirm is called). Editing an event's core fields or its vendor selection is blocked once `status` is `confirmed`.
+
+### `GET /clients`
+
+Entry point. Returns the caller's clients (all agents' clients for admin), each with its events nested, each event with its selected vendors nested.
+
+**Response `data`:**
+
+```json
+[
+  {
+    "id": 1,
+    "name": "Priya Sharma",
+    "email": "priya@example.com",
+    "phone": "9876543210",
+    "address": "12 MG Road, Bangalore",
+    "location": { "id": 3, "name": "Bangalore" },
+    "events": [
+      {
+        "id": 5,
+        "event_name": "Priya's Wedding",
+        "event_priority": "high",
+        "estimated_budget": 500000,
+        "preferred_date": "2026-12-10",
+        "status": "vendor_selected",
+        "total_amount": 85000,
+        "vendors": [
+          { "vendor_profile_id": 9, "business_name": "Grand Caterers", "pricing_type": "per_event", "amount": 85000 }
+        ]
+      }
+    ]
+  }
+]
+```
+
+---
+
+### `POST /clients`
+
+Step 1: create a client.
+
+**Body (JSON):**
+
+| Field         | Type   | Required                | Rules                                              |
+| ------------- | ------ | ------------------------ | --------------------------------------------------- |
+| `agent_id`    | number | Admin only               | Positive integer; the owning agent's `user_id`      |
+| `name`        | string | Yes                      | 1–150 characters                                    |
+| `email`       | string | No                       | Valid email address                                 |
+| `phone`       | string | Yes                      | 10-digit Indian number (starts with 6–9)             |
+| `address`     | string | Yes                      | 1–500 characters (single free-text field)            |
+| `location_id` | number | Yes                      | Positive integer, must reference an active location  |
+
+---
+
+### `PATCH /clients/:clientId`
+
+Edit a client. Same body fields as create, all optional (at least one required), no `agent_id`.
+
+---
+
+### `POST /clients/:clientId/events`
+
+Step 2: create an event for a client.
+
+**Body (JSON):**
+
+| Field               | Type   | Required | Rules                                  |
+| ------------------- | ------ | -------- | --------------------------------------- |
+| `event_name`        | string | Yes      | 1–150 characters                        |
+| `event_priority`    | string | Yes      | One of `low`, `moderate`, `high`        |
+| `estimated_budget`  | number | Yes      | Positive number                         |
+| `preferred_date`    | string | Yes      | ISO date (`YYYY-MM-DD`)                 |
+| `additional_notes`  | string | No       | Up to 2000 characters                   |
+
+---
+
+### `PATCH /events/:eventId`
+
+Edit an event's core fields. Same body fields as create, all optional (at least one required). 400s if the event is already `confirmed`.
+
+---
+
+### `GET /events`
+
+List events filtered by status, scoped to the caller (all agents' events for admin). Response shape matches `GET /events/:eventId/preview` per item (an array of `{ client, event, vendors }` objects).
+
+**Query params:**
+
+| Param    | Required | Notes                                                                                          |
+| -------- | -------- | ------------------------------------------------------------------------------------------------ |
+| `status` | No       | Comma-separated list of `draft`, `vendor_selected`, `confirmed`. Omitted → all statuses. Unrecognized value → 400. |
+
+**Example:** `GET /events?status=draft,vendor_selected`
+
+---
+
+### `GET /vendors/search`
+
+Step 3a: browse approved vendors available for an event's date.
+
+**Query params:**
+
+| Param                 | Required | Notes                                                                 |
+| ---------------------- | -------- | ---------------------------------------------------------------------- |
+| `location_id`          | Yes      | Used for ranking only — matching vendors are sorted first, never excluded |
+| `date`                 | Yes      | ISO date; vendors with a blocked `VendorUnavailability` row on this date are excluded |
+| `vendor_type_id`       | No       | Filters candidates to this vendor type                                |
+| `vendor_category_id`   | No       | Filters candidates to vendors offering this category                  |
+
+Only vendors with `profile_completed = true` and `email_verified = true` are returned. Each result includes business details, vendor type/categories, and all of the vendor's pricing options (`per_hour`/`per_day`/`per_event`).
+
+---
+
+### `PUT /events/:eventId/vendors`
+
+Step 3b: save (or replace) the event's vendor selection. Re-validates every vendor server-side (still approved, still available on the event's `preferred_date`, offers the chosen `pricing_type`), recalculates and saves `total_amount`, and advances `status` to `vendor_selected` (or back to `draft` if `selections` is empty).
+
+**Body (JSON):**
+
+| Field        | Type  | Required | Rules                                                         |
+| ------------ | ----- | -------- | --------------------------------------------------------------- |
+| `selections` | array | Yes      | `{ vendor_profile_id: number, pricing_type: "per_hour"\|"per_day"\|"per_event" }[]`; may be empty to clear all vendors |
+
+---
+
+### `GET /events/:eventId/preview`
+
+Step 3c: aggregated view of the client, the event (including `total_amount`), and all selected vendors.
+
+---
+
+### `PATCH /events/:eventId/confirm`
+
+Step 4: upload the payment receipt (via `POST /api/v1/upload/images` first, then pass the returned URL here) and confirm the event. Requires `status = vendor_selected`; sets `status = confirmed` and `confirmed_at`.
+
+**Body (JSON):**
+
+| Field                  | Type   | Required | Rules      |
+| ----------------------- | ------ | -------- | ----------- |
+| `payment_receipt_url`   | string | Yes      | Valid URL   |
+
+---
+
 ## Response Format
 
 All API responses follow a consistent structure via `ApiResponse`:
@@ -710,4 +863,15 @@ GET    /api/v1/profile/general/get-profile-details-by-id/:profileId         [Aut
 PATCH  /api/v1/profile/general/approve-user-profile/:userId                 [Auth ]
 
 POST   /api/v1/upload/images                   [Auth, multipart]
+
+GET    /api/v1/agent-clients/clients                          [Auth + AGENT|ADMIN]
+POST   /api/v1/agent-clients/clients                          [Auth + AGENT|ADMIN]
+PATCH  /api/v1/agent-clients/clients/:clientId                [Auth + AGENT|ADMIN]
+POST   /api/v1/agent-clients/clients/:clientId/events         [Auth + AGENT|ADMIN]
+PATCH  /api/v1/agent-clients/events/:eventId                  [Auth + AGENT|ADMIN]
+GET    /api/v1/agent-clients/events                           [Auth + AGENT|ADMIN]
+GET    /api/v1/agent-clients/vendors/search                   [Auth + AGENT|ADMIN]
+PUT    /api/v1/agent-clients/events/:eventId/vendors          [Auth + AGENT|ADMIN]
+GET    /api/v1/agent-clients/events/:eventId/preview          [Auth + AGENT|ADMIN]
+PATCH  /api/v1/agent-clients/events/:eventId/confirm          [Auth + AGENT|ADMIN]
 ```

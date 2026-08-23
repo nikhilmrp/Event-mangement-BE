@@ -1,5 +1,5 @@
 import VendorUnavailability from "@models/profile/vendor/VendorUnavailability.model";
-import { Transaction } from "sequelize";
+import { Op, Transaction } from "sequelize";
 
 class VendorUnavailabilityRepository {
   create = async (
@@ -24,6 +24,16 @@ class VendorUnavailabilityRepository {
     return VendorUnavailability.findAll({
       where: { vendor_profile_id },
       order: [["unavailable_date", "ASC"]],
+    });
+  };
+
+  findByVendorProfileIdsAndDate = async (
+    vendor_profile_ids: number[],
+    unavailable_date: string,
+  ): Promise<VendorUnavailability[]> => {
+    if (!vendor_profile_ids.length) return [];
+    return VendorUnavailability.findAll({
+      where: { vendor_profile_id: { [Op.in]: vendor_profile_ids }, unavailable_date },
     });
   };
 }
