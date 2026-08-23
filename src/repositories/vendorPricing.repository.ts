@@ -1,6 +1,6 @@
 import { PricingDetails } from "@dto/profile.dto";
 import VendorPricing, { PricingType } from "@models/profile/vendor/VendorPricing.model";
-import { Transaction } from "sequelize";
+import { Op, Transaction } from "sequelize";
 
 class VendorPricingRepository {
   create = async (
@@ -19,6 +19,13 @@ class VendorPricingRepository {
 
   findByVendorProfileId = async (vendorProfileId: number): Promise<VendorPricing[]> => {
     return VendorPricing.findAll({ where: { vendor_profile_id: vendorProfileId } });
+  };
+
+  findByVendorProfileIds = async (vendorProfileIds: number[]): Promise<VendorPricing[]> => {
+    if (!vendorProfileIds.length) return [];
+    return VendorPricing.findAll({
+      where: { vendor_profile_id: { [Op.in]: vendorProfileIds } },
+    });
   };
 }
 

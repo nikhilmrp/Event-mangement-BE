@@ -1,6 +1,6 @@
 import { CreateVendorProfileDto } from "@dto/profile.dto";
 import VendorProfile from "@models/profile/vendor/VendorProfile.model";
-import { Transaction } from "sequelize";
+import { Op, Transaction } from "sequelize";
 
 type UpdateVendorProfileData = Partial<
   Omit<CreateVendorProfileDto, "service_locations" | "user_id"> & {
@@ -36,6 +36,21 @@ class VendorProfileRepository {
 
   findAll = async (): Promise<VendorProfile[]> => {
     return VendorProfile.findAll({ where: { profile_completed: true } });
+  };
+
+  findApproved = async (vendor_type_id?: number): Promise<VendorProfile[]> => {
+    const where: { profile_completed: boolean; vendor_type_id?: number } = {
+      profile_completed: true,
+    };
+    if (vendor_type_id !== undefined) {
+      where.vendor_type_id = vendor_type_id;
+    }
+    return VendorProfile.findAll({ where });
+  };
+
+  findByIds = async (ids: number[]): Promise<VendorProfile[]> => {
+    if (!ids.length) return [];
+    return VendorProfile.findAll({ where: { id: { [Op.in]: ids } } });
   };
 
   updateProfileStep = async (
