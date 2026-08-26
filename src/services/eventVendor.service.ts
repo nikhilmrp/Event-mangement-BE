@@ -2,11 +2,13 @@ import sequelize from "@config/database";
 import {
   EventVendorSummaryDto,
   SaveEventVendorSelectionsDto,
+  VendorBookingResponseDto,
   VendorSearchFilterDto,
   VendorSearchResultDto,
 } from "@dto/eventVendor.dto";
 import { EventResponseDto } from "@dto/event.dto";
 import { EventStatus } from "@models/agent/Event.model";
+import clientRepository from "@repositories/client.repository";
 import locationRepository from "@repositories/config/location.repository";
 import vendorcategoryRepository from "@repositories/config/vendorcategory.repository";
 import vendortypeRepository from "@repositories/config/vendortype.repository";
@@ -135,6 +137,68 @@ class EventVendorService {
 
     results.sort((a, b) => Number(b.location_match) - Number(a.location_match));
     return results;
+  };
+
+  getVendorBookings = async (
+    user: JWTPayload,
+    statuses?: EventStatus[],
+  ): Promise<VendorBookingResponseDto[]> => {
+    const vendorProfile = await vendorProfileRepository.findByUserId(user.id);
+    if (!vendorProfile) {
+      throw ApiError.notFound("Vendor profile not found");
+    }
+
+    const eventVendorRows = await eventVendorRepository.findByVendorProfileId(vendorProfile.id);
+    if (!eventVendorRows.length) return [];
+
+    const eventVendorByEventId = new Map(eventVendorRows.map((ev) => [ev.event_id, ev]));
+
+    let events = await eventRepository.findByIds(eventVendorRows.map((ev) => ev.event_id));
+    if (statuses?.length) {
+      const statusSet = new Set(statuses);
+      events = events.filter((e) => statusSet.has(e.status));
+    }
+    if (!events.length) return [];
+
+    const clients = await clientRepository.findByIds([...new Set(events.map((e) => e.client_id))]);
+    const clientById = new Map(clients.map((c) => [c.id, c]));
+
+    const locations = await locationRepository.findByIds([
+      ...new Set(clients.map((c) => c.location_id)),
+    ]);
+    const locationById = new Map(locations.map((l) => [l.id, l]));
+
+    return events.map((event) => {
+      const client = clientById.get(event.client_id);
+      const location = client ? locationById.get(client.location_id) : undefined;
+      const eventVendor = eventVendorByEventId.get(event.id)!;
+      return {
+        client: {
+          id: client?.id ?? event.client_id,
+          name: client?.name ?? "",
+          email: client?.email ?? null,
+          phone: client?.phone ?? "",
+          address: client?.address ?? "",
+          location: { id: client?.location_id ?? 0, name: location?.name ?? "" },
+        },
+        event: {
+          id: event.id,
+          event_name: event.event_name,
+          event_priority: event.event_priority,
+          estimated_budget: event.estimated_budget,
+          preferred_date: event.preferred_date,
+          additional_notes: event.additional_notes,
+          status: event.status,
+          total_amount: event.total_amount,
+          payment_receipt_url: event.payment_receipt_url,
+          confirmed_at: event.confirmed_at,
+        },
+        my_selection: {
+          pricing_type: eventVendor.pricing_type,
+          amount: eventVendor.amount,
+        },
+      };
+    });
   };
 
   saveEventVendorSelections = async (

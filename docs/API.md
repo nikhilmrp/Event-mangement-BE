@@ -465,6 +465,57 @@ Returns the list of unavailable dates for the vendor identified by `userId` (a `
 
 ---
 
+#### `GET /get-my-bookings`
+
+**Role required:** `VENDOR`
+
+Returns the events the authenticated vendor has been selected on (vendor resolved from the JWT, not a path/query param), each with client details and the vendor's own `pricing_type`/`amount` for that event. Only the calling vendor's own selection is included — other vendors assigned to the same event are not shown.
+
+**Query params:**
+
+| Param    | Required | Notes                                                                                          |
+| -------- | -------- | ------------------------------------------------------------------------------------------------ |
+| `status` | No       | Comma-separated list of `draft`, `vendor_selected`, `confirmed`. Omitted → all statuses. Unrecognized value → 400. Note: `draft` never actually matches anything, since a vendor row only exists once an event reaches `vendor_selected`. |
+
+**Example:** `GET /get-my-bookings?status=vendor_selected,confirmed`
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "data": [
+    {
+      "client": {
+        "id": 10,
+        "name": "Priya Sharma",
+        "email": "priya@example.com",
+        "phone": "9876512345",
+        "address": "12 MG Road, Bangalore",
+        "location": { "id": 1, "name": "Bangalore" }
+      },
+      "event": {
+        "id": 12,
+        "event_name": "Priya's Wedding",
+        "event_priority": "high",
+        "estimated_budget": 500000,
+        "preferred_date": "2026-12-21",
+        "additional_notes": null,
+        "status": "confirmed",
+        "total_amount": 15000,
+        "payment_receipt_url": "https://bucket.s3.amazonaws.com/payment_receipts/receipt.jpg",
+        "confirmed_at": "2026-08-26T11:36:27.000Z"
+      },
+      "my_selection": { "pricing_type": "per_event", "amount": 15000 }
+    }
+  ],
+  "message": "Bookings fetched successfully",
+  "success": true
+}
+```
+
+---
+
 ### General Profile
 
 **Prefix:** `/api/v1/profile/general`
@@ -857,6 +908,7 @@ POST   /api/v1/profile/vendor/upload-work-gallery                    [Auth]
 POST   /api/v1/profile/vendor/bank-details/create-bank-details       [Auth + VENDOR]
 POST   /api/v1/profile/vendor/add-unavailability                     [Auth]
 GET    /api/v1/profile/vendor/get-unavailability-by-id/:userId       [Auth]
+GET    /api/v1/profile/vendor/get-my-bookings                        [Auth + VENDOR]
 
 GET    /api/v1/profile/general/get-profile-details                          [Auth ]
 GET    /api/v1/profile/general/get-profile-details-by-id/:profileId         [Auth ]
