@@ -42,9 +42,7 @@ class EventVendorService {
     if (!candidates.length) return [];
 
     const users = await userRepository.findByIds(candidates.map((c) => c.user_id));
-    const verifiedUserIds = new Set(
-      users.filter((u) => u.email_verified).map((u) => u.id),
-    );
+    const verifiedUserIds = new Set(users.filter((u) => u.email_verified).map((u) => u.id));
     candidates = candidates.filter((c) => verifiedUserIds.has(c.user_id));
     if (!candidates.length) return [];
 
@@ -77,9 +75,7 @@ class EventVendorService {
     ]);
 
     const matchingLocationVendorIds = new Set(
-      locationLinks
-        .filter((l) => l.location_id === location_id)
-        .map((l) => l.vendor_profile_id),
+      locationLinks.filter((l) => l.location_id === location_id).map((l) => l.vendor_profile_id),
     );
 
     const categoryIds = [...new Set(categoryLinks.map((l) => l.vendor_category_id))];
@@ -101,11 +97,7 @@ class EventVendorService {
     }
 
     const vendorTypeIds = [
-      ...new Set(
-        candidates
-          .map((c) => c.vendor_type_id)
-          .filter((id): id is number => id !== null),
-      ),
+      ...new Set(candidates.map((c) => c.vendor_type_id).filter((id): id is number => id !== null)),
     ];
     const vendorTypes = await vendortypeRepository.findByIds(vendorTypeIds);
     const vendorTypeById = new Map(vendorTypes.map((t) => [t.id, t]));
@@ -222,7 +214,11 @@ class EventVendorService {
       throw ApiError.badRequest("Duplicate vendor selections are not allowed");
     }
 
-    const rowsToCreate: { vendor_profile_id: number; pricing_type: typeof selections[number]["pricing_type"]; amount: number }[] = [];
+    const rowsToCreate: {
+      vendor_profile_id: number;
+      pricing_type: (typeof selections)[number]["pricing_type"];
+      amount: number;
+    }[] = [];
 
     if (selections.length > 0) {
       const vendorProfiles = await vendorProfileRepository.findByIds(uniqueVendorProfileIds);
@@ -234,9 +230,7 @@ class EventVendorService {
       }
 
       const vendorUsers = await userRepository.findByIds(vendorProfiles.map((v) => v.user_id));
-      const verifiedUserIds = new Set(
-        vendorUsers.filter((u) => u.email_verified).map((u) => u.id),
-      );
+      const verifiedUserIds = new Set(vendorUsers.filter((u) => u.email_verified).map((u) => u.id));
       if (vendorProfiles.some((v) => !verifiedUserIds.has(v.user_id))) {
         throw ApiError.badRequest("Some of the selected vendors are not approved");
       }
@@ -249,9 +243,8 @@ class EventVendorService {
         throw ApiError.conflict("Some of the selected vendors are unavailable on the event date");
       }
 
-      const pricingRows = await vendorPricingRepository.findByVendorProfileIds(
-        uniqueVendorProfileIds,
-      );
+      const pricingRows =
+        await vendorPricingRepository.findByVendorProfileIds(uniqueVendorProfileIds);
       const pricingByKey = new Map(
         pricingRows.map((p) => [`${p.vendor_profile_id}:${p.pricing_type}`, p]),
       );
