@@ -1,3 +1,4 @@
+import vendorBookingController from "@controllers/profile/vendorBooking.controller";
 import vendorProfileController from "@controllers/profile/vendorProfile.controller";
 import vendorUnavailabilityController from "@controllers/profile/vendorUnavailability.controller";
 import { authenticate } from "@middleware/auth.middleware";
@@ -50,6 +51,12 @@ router.get(
   "/get-unavailability-by-id/:userId",
   authenticate,
   vendorUnavailabilityController.getUnavailabilityByUserId,
+);
+router.get(
+  "/get-my-bookings",
+  authenticate,
+  validateUserRole(UserRole.VENDOR),
+  vendorBookingController.getMyBookings,
 );
 router.use("/bank-details", validateUserRole(UserRole.VENDOR), bankDetailsRoute);
 

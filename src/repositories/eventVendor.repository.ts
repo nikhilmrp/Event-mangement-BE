@@ -30,6 +30,10 @@ class EventVendorRepository {
     if (!eventIds.length) return [];
     return EventVendor.findAll({ where: { event_id: { [Op.in]: eventIds } } });
   };
+
+  findByVendorProfileId = async (vendorProfileId: number): Promise<EventVendor[]> => {
+    return EventVendor.findAll({ where: { vendor_profile_id: vendorProfileId } });
+  };
 }
 
 export default new EventVendorRepository();

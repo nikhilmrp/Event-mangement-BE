@@ -2,11 +2,13 @@ import sequelize from "@config/database";
 import {
   EventVendorSummaryDto,
   SaveEventVendorSelectionsDto,
+  VendorBookingResponseDto,
   VendorSearchFilterDto,
   VendorSearchResultDto,
 } from "@dto/eventVendor.dto";
 import { EventResponseDto } from "@dto/event.dto";
 import { EventStatus } from "@models/agent/Event.model";
+import clientRepository from "@repositories/client.repository";
 import locationRepository from "@repositories/config/location.repository";
 import vendorcategoryRepository from "@repositories/config/vendorcategory.repository";
 import vendortypeRepository from "@repositories/config/vendortype.repository";
@@ -40,9 +42,7 @@ class EventVendorService {
     if (!candidates.length) return [];
 
     const users = await userRepository.findByIds(candidates.map((c) => c.user_id));
-    const verifiedUserIds = new Set(
-      users.filter((u) => u.email_verified).map((u) => u.id),
-    );
+    const verifiedUserIds = new Set(users.filter((u) => u.email_verified).map((u) => u.id));
     candidates = candidates.filter((c) => verifiedUserIds.has(c.user_id));
     if (!candidates.length) return [];
 
@@ -75,9 +75,7 @@ class EventVendorService {
     ]);
 
     const matchingLocationVendorIds = new Set(
-      locationLinks
-        .filter((l) => l.location_id === location_id)
-        .map((l) => l.vendor_profile_id),
+      locationLinks.filter((l) => l.location_id === location_id).map((l) => l.vendor_profile_id),
     );
 
     const categoryIds = [...new Set(categoryLinks.map((l) => l.vendor_category_id))];
@@ -99,11 +97,7 @@ class EventVendorService {
     }
 
     const vendorTypeIds = [
-      ...new Set(
-        candidates
-          .map((c) => c.vendor_type_id)
-          .filter((id): id is number => id !== null),
-      ),
+      ...new Set(candidates.map((c) => c.vendor_type_id).filter((id): id is number => id !== null)),
     ];
     const vendorTypes = await vendortypeRepository.findByIds(vendorTypeIds);
     const vendorTypeById = new Map(vendorTypes.map((t) => [t.id, t]));
@@ -137,6 +131,68 @@ class EventVendorService {
     return results;
   };
 
+  getVendorBookings = async (
+    user: JWTPayload,
+    statuses?: EventStatus[],
+  ): Promise<VendorBookingResponseDto[]> => {
+    const vendorProfile = await vendorProfileRepository.findByUserId(user.id);
+    if (!vendorProfile) {
+      throw ApiError.notFound("Vendor profile not found");
+    }
+
+    const eventVendorRows = await eventVendorRepository.findByVendorProfileId(vendorProfile.id);
+    if (!eventVendorRows.length) return [];
+
+    const eventVendorByEventId = new Map(eventVendorRows.map((ev) => [ev.event_id, ev]));
+
+    let events = await eventRepository.findByIds(eventVendorRows.map((ev) => ev.event_id));
+    if (statuses?.length) {
+      const statusSet = new Set(statuses);
+      events = events.filter((e) => statusSet.has(e.status));
+    }
+    if (!events.length) return [];
+
+    const clients = await clientRepository.findByIds([...new Set(events.map((e) => e.client_id))]);
+    const clientById = new Map(clients.map((c) => [c.id, c]));
+
+    const locations = await locationRepository.findByIds([
+      ...new Set(clients.map((c) => c.location_id)),
+    ]);
+    const locationById = new Map(locations.map((l) => [l.id, l]));
+
+    return events.map((event) => {
+      const client = clientById.get(event.client_id);
+      const location = client ? locationById.get(client.location_id) : undefined;
+      const eventVendor = eventVendorByEventId.get(event.id)!;
+      return {
+        client: {
+          id: client?.id ?? event.client_id,
+          name: client?.name ?? "",
+          email: client?.email ?? null,
+          phone: client?.phone ?? "",
+          address: client?.address ?? "",
+          location: { id: client?.location_id ?? 0, name: location?.name ?? "" },
+        },
+        event: {
+          id: event.id,
+          event_name: event.event_name,
+          event_priority: event.event_priority,
+          estimated_budget: event.estimated_budget,
+          preferred_date: event.preferred_date,
+          additional_notes: event.additional_notes,
+          status: event.status,
+          total_amount: event.total_amount,
+          payment_receipt_url: event.payment_receipt_url,
+          confirmed_at: event.confirmed_at,
+        },
+        my_selection: {
+          pricing_type: eventVendor.pricing_type,
+          amount: eventVendor.amount,
+        },
+      };
+    });
+  };
+
   saveEventVendorSelections = async (
     user: JWTPayload,
     data: SaveEventVendorSelectionsDto,
@@ -158,7 +214,11 @@ class EventVendorService {
       throw ApiError.badRequest("Duplicate vendor selections are not allowed");
     }
 
-    const rowsToCreate: { vendor_profile_id: number; pricing_type: typeof selections[number]["pricing_type"]; amount: number }[] = [];
+    const rowsToCreate: {
+      vendor_profile_id: number;
+      pricing_type: (typeof selections)[number]["pricing_type"];
+      amount: number;
+    }[] = [];
 
     if (selections.length > 0) {
       const vendorProfiles = await vendorProfileRepository.findByIds(uniqueVendorProfileIds);
@@ -170,9 +230,7 @@ class EventVendorService {
       }
 
       const vendorUsers = await userRepository.findByIds(vendorProfiles.map((v) => v.user_id));
-      const verifiedUserIds = new Set(
-        vendorUsers.filter((u) => u.email_verified).map((u) => u.id),
-      );
+      const verifiedUserIds = new Set(vendorUsers.filter((u) => u.email_verified).map((u) => u.id));
       if (vendorProfiles.some((v) => !verifiedUserIds.has(v.user_id))) {
         throw ApiError.badRequest("Some of the selected vendors are not approved");
       }
@@ -185,9 +243,8 @@ class EventVendorService {
         throw ApiError.conflict("Some of the selected vendors are unavailable on the event date");
       }
 
-      const pricingRows = await vendorPricingRepository.findByVendorProfileIds(
-        uniqueVendorProfileIds,
-      );
+      const pricingRows =
+        await vendorPricingRepository.findByVendorProfileIds(uniqueVendorProfileIds);
       const pricingByKey = new Map(
         pricingRows.map((p) => [`${p.vendor_profile_id}:${p.pricing_type}`, p]),
       );
