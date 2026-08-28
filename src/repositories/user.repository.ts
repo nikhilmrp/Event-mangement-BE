@@ -15,10 +15,19 @@ class UserRepository {
     return await User.findByPk(user_id);
   }
 
-  async findByRole(role: UserRole, emailVerified?: boolean): Promise<User[]> {
-    const where: { role: UserRole; email_verified?: boolean } = { role };
+  async findByRole(role: UserRole, emailVerified?: boolean, search?: string): Promise<User[]> {
+    const where: { role: UserRole; email_verified?: boolean; [Op.or]?: unknown[] } = { role };
     if (emailVerified !== undefined) {
       where.email_verified = emailVerified;
+    }
+    if (search) {
+      const term = `%${search}%`;
+      where[Op.or] = [
+        { first_name: { [Op.like]: term } },
+        { last_name: { [Op.like]: term } },
+        { email: { [Op.like]: term } },
+        { phone: { [Op.like]: term } },
+      ];
     }
     return await User.findAll({ where });
   }

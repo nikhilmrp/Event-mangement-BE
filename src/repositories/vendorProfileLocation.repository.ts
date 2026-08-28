@@ -25,6 +25,17 @@ class VendorProfileLocationRepository {
       where: { vendor_profile_id: { [Op.in]: vendorProfileIds } },
     });
   };
+
+  findVendorProfileIdsByLocationIds = async (locationIds: number[]): Promise<number[]> => {
+    if (!locationIds.length) return [];
+    const vendorProfileLocations = await VendorProfileLocation.findAll({
+      where: { location_id: { [Op.in]: locationIds } },
+      attributes: ["vendor_profile_id"],
+    });
+    return vendorProfileLocations.map(
+      (vendorProfileLocation) => vendorProfileLocation.vendor_profile_id,
+    );
+  };
 }
 
 export default new VendorProfileLocationRepository();

@@ -21,7 +21,15 @@ class ProfileDetailsController {
       emailVerified = emailVerifiedParam === "true";
     }
 
-    const profileDetails = await profileDetailsService.getProfileDetails(role, emailVerified);
+    const searchParam = req.query.search;
+    const search =
+      typeof searchParam === "string" && searchParam.trim() !== "" ? searchParam.trim() : undefined;
+
+    const profileDetails = await profileDetailsService.getProfileDetails(
+      role,
+      emailVerified,
+      search,
+    );
     res.json(new ApiResponse(200, profileDetails, "Profile details fetched successfully"));
   });
 

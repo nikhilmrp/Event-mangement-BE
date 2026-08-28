@@ -1,6 +1,6 @@
 import { CreateAgentProfileDto } from "@dto/profile.dto";
 import AgentProfile from "@models/profile/agent/AgentProfile.model";
-import { Transaction } from "sequelize";
+import { Op, Transaction } from "sequelize";
 
 class AgentProfileRepository {
   create = async (
@@ -22,8 +22,24 @@ class AgentProfileRepository {
     return AgentProfile.findByPk(id);
   };
 
-  findAll = async (): Promise<AgentProfile[]> => {
-    return AgentProfile.findAll({ where: { profile_completed: true } });
+  findAll = async (searchOptions?: {
+    search: string;
+    matchingUserIds: number[];
+    matchingProfileIdsFromJoins: number[];
+  }): Promise<AgentProfile[]> => {
+    const where: { profile_completed: boolean; [Op.or]?: unknown[] } = { profile_completed: true };
+    if (searchOptions) {
+      const term = `%${searchOptions.search}%`;
+      const orConditions: unknown[] = [{ address: { [Op.like]: term } }];
+      if (searchOptions.matchingUserIds.length) {
+        orConditions.push({ user_id: { [Op.in]: searchOptions.matchingUserIds } });
+      }
+      if (searchOptions.matchingProfileIdsFromJoins.length) {
+        orConditions.push({ id: { [Op.in]: searchOptions.matchingProfileIdsFromJoins } });
+      }
+      where[Op.or] = orConditions;
+    }
+    return AgentProfile.findAll({ where });
   };
 
   updateProfileStep = async (

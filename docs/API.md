@@ -528,6 +528,8 @@ Returns a summary list of every completed profile for the given role (`vendor`, 
 
 Optionally filter by verification status with `?email_verified=true` or `?email_verified=false`. Any other value for `email_verified` returns 400. When omitted, profiles are returned regardless of verification status.
 
+Optionally filter with `?search=<term>` — case-insensitive substring match, applied at the database query level (not in-memory). For `vendor`, matches business name, address, description, email, phone, vendor type, categories, or locations. For `agent`, matches address, locations, name, email, or phone. For `admin`, matches name, email, or phone. Empty/whitespace-only `search` is treated as no filter.
+
 ---
 
 #### `GET /get-profile-details-by-id/:profileId?role=vendor|agent`
