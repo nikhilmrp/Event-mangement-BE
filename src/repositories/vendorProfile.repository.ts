@@ -34,8 +34,34 @@ class VendorProfileRepository {
     return VendorProfile.findByPk(id);
   };
 
-  findAll = async (): Promise<VendorProfile[]> => {
-    return VendorProfile.findAll({ where: { profile_completed: true } });
+  findAll = async (searchOptions?: {
+    search: string;
+    matchingUserIds: number[];
+    matchingVendorTypeIds: number[];
+    matchingProfileIdsFromJoins: number[];
+  }): Promise<VendorProfile[]> => {
+    const where: { profile_completed: boolean; [Op.or]?: unknown[] } = { profile_completed: true };
+    if (searchOptions) {
+      const term = `%${searchOptions.search}%`;
+      const orConditions: unknown[] = [
+        { business_name: { [Op.like]: term } },
+        { email: { [Op.like]: term } },
+        { phone_number: { [Op.like]: term } },
+        { address: { [Op.like]: term } },
+        { description: { [Op.like]: term } },
+      ];
+      if (searchOptions.matchingVendorTypeIds.length) {
+        orConditions.push({ vendor_type_id: { [Op.in]: searchOptions.matchingVendorTypeIds } });
+      }
+      if (searchOptions.matchingUserIds.length) {
+        orConditions.push({ user_id: { [Op.in]: searchOptions.matchingUserIds } });
+      }
+      if (searchOptions.matchingProfileIdsFromJoins.length) {
+        orConditions.push({ id: { [Op.in]: searchOptions.matchingProfileIdsFromJoins } });
+      }
+      where[Op.or] = orConditions;
+    }
+    return VendorProfile.findAll({ where });
   };
 
   findApproved = async (vendor_type_id?: number): Promise<VendorProfile[]> => {

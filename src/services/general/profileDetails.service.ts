@@ -21,14 +21,15 @@ class ProfileDetailsService {
   getProfileDetails = async (
     role: UserRole,
     emailVerified?: boolean,
+    search?: string,
   ): Promise<ProfileDetailsResponseDto[]> => {
     if (role === UserRole.VENDOR) {
-      return this.getVendorProfileDetails(emailVerified);
+      return this.getVendorProfileDetails(emailVerified, search);
     }
     if (role === UserRole.AGENT) {
-      return this.getAgentProfileDetails(emailVerified);
+      return this.getAgentProfileDetails(emailVerified, search);
     }
-    return this.getAdminProfileDetails(emailVerified);
+    return this.getAdminProfileDetails(emailVerified, search);
   };
 
   getProfileDetailsById = async (
@@ -97,10 +98,61 @@ class ProfileDetailsService {
     };
   };
 
+  private buildVendorSearchOptions = async (
+    search: string,
+  ): Promise<{
+    search: string;
+    matchingUserIds: number[];
+    matchingVendorTypeIds: number[];
+    matchingProfileIdsFromJoins: number[];
+  }> => {
+    const [matchingUsers, matchingVendorTypeIds, matchingCategoryIds, matchingLocationIds] =
+      await Promise.all([
+        userRepository.findByRole(UserRole.VENDOR, undefined, search),
+        vendorTypeRepository.findIdsByNameLike(search),
+        vendorCategoryRepository.findIdsByNameLike(search),
+        locationRepository.findIdsByNameLike(search),
+      ]);
+    const [profileIdsFromCategories, profileIdsFromLocations] = await Promise.all([
+      vendorProfileCategoryRepository.findVendorProfileIdsByCategoryIds(matchingCategoryIds),
+      vendorProfileLocationRepository.findVendorProfileIdsByLocationIds(matchingLocationIds),
+    ]);
+    return {
+      search,
+      matchingUserIds: matchingUsers.map((user) => user.id),
+      matchingVendorTypeIds,
+      matchingProfileIdsFromJoins: [
+        ...new Set([...profileIdsFromCategories, ...profileIdsFromLocations]),
+      ],
+    };
+  };
+
+  private buildAgentSearchOptions = async (
+    search: string,
+  ): Promise<{
+    search: string;
+    matchingUserIds: number[];
+    matchingProfileIdsFromJoins: number[];
+  }> => {
+    const [matchingUsers, matchingLocationIds] = await Promise.all([
+      userRepository.findByRole(UserRole.AGENT, undefined, search),
+      locationRepository.findIdsByNameLike(search),
+    ]);
+    const profileIdsFromLocations =
+      await agentProfileLocationRepository.findAgentProfileIdsByLocationIds(matchingLocationIds);
+    return {
+      search,
+      matchingUserIds: matchingUsers.map((user) => user.id),
+      matchingProfileIdsFromJoins: [...new Set(profileIdsFromLocations)],
+    };
+  };
+
   private getVendorProfileDetails = async (
     emailVerified?: boolean,
+    search?: string,
   ): Promise<ProfileDetailsResponseDto[]> => {
-    const vendorProfiles = await vendorProfileRepository.findAll();
+    const searchOptions = search ? await this.buildVendorSearchOptions(search) : undefined;
+    const vendorProfiles = await vendorProfileRepository.findAll(searchOptions);
     const vendorProfileIds = vendorProfiles.map((vendorProfile) => vendorProfile.id);
     const vendorTypeIds = [
       ...new Set(
@@ -149,8 +201,10 @@ class ProfileDetailsService {
 
   private getAgentProfileDetails = async (
     emailVerified?: boolean,
+    search?: string,
   ): Promise<ProfileDetailsResponseDto[]> => {
-    const agentProfiles = await agentProfileRepository.findAll();
+    const searchOptions = search ? await this.buildAgentSearchOptions(search) : undefined;
+    const agentProfiles = await agentProfileRepository.findAll(searchOptions);
     const agentProfileIds = agentProfiles.map((agentProfile) => agentProfile.id);
     const [locationNamesByProfileId, users] = await Promise.all([
       this.getLocationNamesByAgentProfileIds(agentProfileIds),
@@ -181,8 +235,9 @@ class ProfileDetailsService {
 
   private getAdminProfileDetails = async (
     emailVerified?: boolean,
+    search?: string,
   ): Promise<ProfileDetailsResponseDto[]> => {
-    const admins = await userRepository.findByRole(UserRole.ADMIN, emailVerified);
+    const admins = await userRepository.findByRole(UserRole.ADMIN, emailVerified, search);
 
     return admins.map((admin) => {
       const fullName = `${admin.first_name} ${admin.last_name}`;

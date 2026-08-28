@@ -31,6 +31,17 @@ class AgentProfileLocationRepository {
       where: { agent_profile_id: { [Op.in]: agentProfileIds } },
     });
   };
+
+  findAgentProfileIdsByLocationIds = async (locationIds: number[]): Promise<number[]> => {
+    if (!locationIds.length) return [];
+    const agentProfileLocations = await AgentProfileLocation.findAll({
+      where: { location_id: { [Op.in]: locationIds } },
+      attributes: ["agent_profile_id"],
+    });
+    return agentProfileLocations.map(
+      (agentProfileLocation) => agentProfileLocation.agent_profile_id,
+    );
+  };
 }
 
 export default new AgentProfileLocationRepository();

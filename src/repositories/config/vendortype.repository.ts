@@ -16,6 +16,14 @@ class VendorTypeRepository {
     return VendorType.findOne({ where: { name } });
   }
 
+  async findIdsByNameLike(term: string): Promise<number[]> {
+    const vendorTypes = await VendorType.findAll({
+      where: { name: { [Op.like]: `%${term}%` } },
+      attributes: ["id"],
+    });
+    return vendorTypes.map((vendorType) => vendorType.id);
+  }
+
   async create(data: CreateVendorTypeDto): Promise<VendorType> {
     return VendorType.create(data);
   }

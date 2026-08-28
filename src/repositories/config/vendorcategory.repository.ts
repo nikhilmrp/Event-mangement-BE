@@ -30,6 +30,14 @@ class VendorCategoryRepository {
   async findAll(): Promise<VendorCategory[]> {
     return VendorCategory.findAll();
   }
+
+  async findIdsByNameLike(term: string): Promise<number[]> {
+    const vendorCategories = await VendorCategory.findAll({
+      where: { name: { [Op.like]: `%${term}%` }, status: true },
+      attributes: ["id"],
+    });
+    return vendorCategories.map((vendorCategory) => vendorCategory.id);
+  }
 }
 
 export default new VendorCategoryRepository();

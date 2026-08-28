@@ -30,6 +30,17 @@ class VendorProfileCategoryRepository {
       where: { vendor_profile_id: { [Op.in]: vendorProfileIds } },
     });
   };
+
+  findVendorProfileIdsByCategoryIds = async (categoryIds: number[]): Promise<number[]> => {
+    if (!categoryIds.length) return [];
+    const vendorProfileCategories = await VendorProfileCategory.findAll({
+      where: { vendor_category_id: { [Op.in]: categoryIds } },
+      attributes: ["vendor_profile_id"],
+    });
+    return vendorProfileCategories.map(
+      (vendorProfileCategory) => vendorProfileCategory.vendor_profile_id,
+    );
+  };
 }
 
 export default new VendorProfileCategoryRepository();

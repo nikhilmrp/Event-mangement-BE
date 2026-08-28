@@ -24,6 +24,14 @@ class LocationRepository {
   async findByName(name: string): Promise<Location | null> {
     return Location.findOne({ where: { name, status: true } });
   }
+
+  async findIdsByNameLike(term: string): Promise<number[]> {
+    const locations = await Location.findAll({
+      where: { name: { [Op.like]: `%${term}%` }, status: true },
+      attributes: ["id"],
+    });
+    return locations.map((location) => location.id);
+  }
 }
 
 export default new LocationRepository();
