@@ -182,8 +182,8 @@ class EventVendorService {
           additional_notes: event.additional_notes,
           status: event.status,
           total_amount: event.total_amount,
-          payment_receipt_url: event.payment_receipt_url,
           confirmed_at: event.confirmed_at,
+          completed_at: event.completed_at,
         },
         my_selection: {
           pricing_type: eventVendor.pricing_type,
@@ -204,8 +204,8 @@ class EventVendorService {
       throw ApiError.notFound("Event not found");
     }
     assertAgentOwnership(scope, event.agent_profile_id);
-    if (event.status === EventStatus.CONFIRMED) {
-      throw ApiError.badRequest("Cannot change vendors on a confirmed event");
+    if (event.status === EventStatus.CONFIRMED || event.status === EventStatus.COMPLETED) {
+      throw ApiError.badRequest(`Cannot change vendors on a ${event.status} event`);
     }
 
     const vendorProfileIds = selections.map((s) => s.vendor_profile_id);

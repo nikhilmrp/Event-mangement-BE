@@ -1,4 +1,4 @@
-import { ConfirmEventDto, CreateEventDto, UpdateEventDto } from "@dto/event.dto";
+import { AddPaymentReceiptDto, CreateEventDto, UpdateEventDto } from "@dto/event.dto";
 import { EventStatus } from "@models/agent/Event.model";
 import eventService from "@services/event.service";
 import ApiError from "@utils/ApiError";
@@ -84,13 +84,22 @@ class EventController {
     if (isNaN(eventId)) {
       throw ApiError.badRequest("Invalid event id");
     }
-    const { payment_receipt_url }: ConfirmEventDto = req.body;
-    const event = await eventService.confirmEvent(req.user!, {
+    const { payment_receipt_url }: AddPaymentReceiptDto = req.body;
+    const event = await eventService.addPaymentReceipt(req.user!, {
       user_id: req.user!.id,
       event_id: eventId,
       payment_receipt_url,
     });
-    res.json(new ApiResponse(200, event, "Event confirmed successfully"));
+    res.json(new ApiResponse(200, event, "Payment receipt uploaded successfully"));
+  });
+
+  completeEvent = asyncHandler(async (req: Request, res: Response) => {
+    const eventId = Number(req.params.eventId);
+    if (isNaN(eventId)) {
+      throw ApiError.badRequest("Invalid event id");
+    }
+    const event = await eventService.completeEvent(eventId);
+    res.json(new ApiResponse(200, event, "Event marked as completed"));
   });
 }
 

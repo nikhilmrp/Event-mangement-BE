@@ -1,5 +1,5 @@
 import { AuthResponseDto, AuthUserDto, LoginDto, RegisterUserDto } from "@dto/auth.dto";
-import User, { UserRole } from "@models/User.model";
+import User, { UserRole, UserStatus } from "@models/User.model";
 import agentProfileRepository from "@repositories/agentProfile.repository";
 import userRepository from "@repositories/user.repository";
 import vendorProfileRepository from "@repositories/vendorProfile.repository";
@@ -60,6 +60,10 @@ class AuthService {
     const isPasswordValid = await user.comparePassword(data.password);
     if (!isPasswordValid) {
       throw ApiError.unauthorized("Invalid password");
+    }
+
+    if (user.status === UserStatus.SUSPENDED) {
+      throw ApiError.forbidden("Your account has been suspended");
     }
 
     const token = generateToken({

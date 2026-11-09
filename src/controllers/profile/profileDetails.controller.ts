@@ -54,6 +54,15 @@ class ProfileDetailsController {
     const result = await profileDetailsService.approveUserProfile(userId);
     res.json(new ApiResponse(200, result, "User profile approved successfully"));
   });
+
+  suspendUser = asyncHandler(async (req: Request, res: Response) => {
+    const userId = Number(req.params.userId);
+    if (isNaN(userId)) {
+      throw ApiError.badRequest("Invalid user id");
+    }
+    const result = await profileDetailsService.suspendUser(userId);
+    res.json(new ApiResponse(200, result, "User suspended successfully"));
+  });
 }
 
 export default new ProfileDetailsController();

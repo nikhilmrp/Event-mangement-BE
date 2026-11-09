@@ -3,7 +3,7 @@ import {
   ProfileDetailsResponseDto,
   VendorProfileFullDetailsResponseDto,
 } from "@dto/profile.dto";
-import { UserRole } from "@models/User.model";
+import { UserRole, UserStatus } from "@models/User.model";
 import agentProfileLocationRepository from "@repositories/agentProfileLocation.repository";
 import agentProfileRepository from "@repositories/agentProfile.repository";
 import locationRepository from "@repositories/config/location.repository";
@@ -45,7 +45,10 @@ class ProfileDetailsService {
     throw ApiError.badRequest("Role must be vendor or agent");
   };
 
-  approveUserProfile = async (userId: number): Promise<{ id: number; email_verified: boolean }> => {
+  // Also reactivates a suspended user.
+  approveUserProfile = async (
+    userId: number,
+  ): Promise<{ id: number; status: UserStatus; email_verified: boolean }> => {
     const user = await userRepository.findByUserId(userId);
     if (!user) {
       throw ApiError.notFound("User not found");
@@ -54,8 +57,29 @@ class ProfileDetailsService {
       throw ApiError.conflict("User is already verified");
     }
 
-    await userRepository.updateById(userId, { email_verified: true });
-    return { id: userId, email_verified: true };
+    await userRepository.updateById(userId, { status: UserStatus.ACTIVE, email_verified: true });
+    return { id: userId, status: UserStatus.ACTIVE, email_verified: true };
+  };
+
+  suspendUser = async (
+    userId: number,
+  ): Promise<{ id: number; status: UserStatus; email_verified: boolean }> => {
+    const user = await userRepository.findByUserId(userId);
+    if (!user) {
+      throw ApiError.notFound("User not found");
+    }
+    if (user.role !== UserRole.AGENT && user.role !== UserRole.VENDOR) {
+      throw ApiError.badRequest("Only agents and vendors can be suspended");
+    }
+    if (user.status === UserStatus.SUSPENDED) {
+      throw ApiError.conflict("User is already suspended");
+    }
+
+    await userRepository.updateById(userId, {
+      status: UserStatus.SUSPENDED,
+      email_verified: false,
+    });
+    return { id: userId, status: UserStatus.SUSPENDED, email_verified: false };
   };
 
   private getAgentProfileDetailsById = async (
