@@ -22,6 +22,11 @@ class AgentProfileRepository {
     return AgentProfile.findByPk(id);
   };
 
+  findByIds = async (ids: number[]): Promise<AgentProfile[]> => {
+    if (!ids.length) return [];
+    return AgentProfile.findAll({ where: { id: { [Op.in]: ids } } });
+  };
+
   findAll = async (searchOptions?: {
     search: string;
     matchingUserIds: number[];

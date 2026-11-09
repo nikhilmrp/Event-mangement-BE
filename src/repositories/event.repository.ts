@@ -77,13 +77,16 @@ class EventRepository {
     await Event.update(data, { where: { id }, ...(tx ? { transaction: tx } : {}) });
   };
 
-  confirm = async (
-    id: number,
-    data: { payment_receipt_url: string; confirmed_at: Date },
-    tx?: Transaction,
-  ): Promise<void> => {
+  markConfirmed = async (id: number, confirmed_at: Date, tx?: Transaction): Promise<void> => {
     await Event.update(
-      { ...data, status: EventStatus.CONFIRMED },
+      { confirmed_at, status: EventStatus.CONFIRMED },
+      { where: { id }, ...(tx ? { transaction: tx } : {}) },
+    );
+  };
+
+  markCompleted = async (id: number, completed_at: Date, tx?: Transaction): Promise<void> => {
+    await Event.update(
+      { completed_at, status: EventStatus.COMPLETED },
       { where: { id }, ...(tx ? { transaction: tx } : {}) },
     );
   };

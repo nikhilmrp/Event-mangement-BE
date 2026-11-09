@@ -53,8 +53,8 @@ export interface VendorBookingResponseDto {
     additional_notes: string | null;
     status: EventStatus;
     total_amount: number;
-    payment_receipt_url: string | null;
     confirmed_at: Date | null;
+    completed_at: Date | null;
   };
   my_selection: {
     pricing_type: PricingType;

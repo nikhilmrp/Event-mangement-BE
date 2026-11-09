@@ -1,5 +1,5 @@
 import { RegisterUserDto } from "@dto/auth.dto";
-import User, { UserRole } from "@models/User.model";
+import User, { UserRole, UserStatus } from "@models/User.model";
 import { Op } from "sequelize";
 
 class UserRepository {
@@ -37,7 +37,10 @@ class UserRepository {
     return await User.findAll({ where: { id: { [Op.in]: ids } } });
   }
 
-  async updateById(id: number, data: Partial<{ email_verified: boolean }>): Promise<void> {
+  async updateById(
+    id: number,
+    data: Partial<{ email_verified: boolean; status: UserStatus }>,
+  ): Promise<void> {
     await User.update(data, { where: { id } });
   }
 }

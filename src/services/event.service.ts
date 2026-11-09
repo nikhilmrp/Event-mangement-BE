@@ -1,16 +1,21 @@
+import sequelize from "@config/database";
 import {
-  ConfirmEventDto,
+  AddPaymentReceiptDto,
   CreateEventDto,
   EventPreviewResponseDto,
   EventResponseDto,
+  EventWithReceiptsResponseDto,
   UpdateEventDto,
 } from "@dto/event.dto";
 import { EventVendorSummaryDto } from "@dto/eventVendor.dto";
 import Event, { EventStatus } from "@models/agent/Event.model";
+import agentProfileRepository from "@repositories/agentProfile.repository";
 import clientRepository from "@repositories/client.repository";
 import locationRepository from "@repositories/config/location.repository";
 import eventRepository from "@repositories/event.repository";
+import eventPaymentReceiptRepository from "@repositories/eventPaymentReceipt.repository";
 import eventVendorRepository from "@repositories/eventVendor.repository";
+import userRepository from "@repositories/user.repository";
 import vendorProfileRepository from "@repositories/vendorProfile.repository";
 import {
   assertAgentOwnership,
@@ -64,8 +69,8 @@ class EventService {
       throw ApiError.notFound("Event not found");
     }
     assertAgentOwnership(scope, event.agent_profile_id);
-    if (event.status === EventStatus.CONFIRMED) {
-      throw ApiError.badRequest("Cannot edit a confirmed event");
+    if (event.status === EventStatus.CONFIRMED || event.status === EventStatus.COMPLETED) {
+      throw ApiError.badRequest(`Cannot edit a ${event.status} event`);
     }
 
     await eventRepository.update({
@@ -96,10 +101,13 @@ class EventService {
       throw ApiError.notFound("Client not found");
     }
 
-    const [location, eventVendors] = await Promise.all([
+    const [location, eventVendors, agentProfile, receipts] = await Promise.all([
       locationRepository.findById(client.location_id),
       eventVendorRepository.findByEventId(event_id),
+      agentProfileRepository.findById(event.agent_profile_id),
+      eventPaymentReceiptRepository.findByEventId(event_id),
     ]);
+    const agentUser = agentProfile ? await userRepository.findByUserId(agentProfile.user_id) : null;
 
     const vendorProfiles = await vendorProfileRepository.findByIds(
       eventVendors.map((ev) => ev.vendor_profile_id),
@@ -114,6 +122,12 @@ class EventService {
     }));
 
     return {
+      agent: {
+        id: event.agent_profile_id,
+        name: agentUser ? `${agentUser.first_name} ${agentUser.last_name}` : "",
+        email: agentUser?.email ?? null,
+        phone: agentUser?.phone ?? "",
+      },
       client: {
         id: client.id,
         name: client.name,
@@ -131,8 +145,9 @@ class EventService {
         additional_notes: event.additional_notes,
         status: event.status,
         total_amount: event.total_amount,
-        payment_receipt_url: event.payment_receipt_url,
+        payment_receipts: receipts.map((r) => r.payment_receipt_url),
         confirmed_at: event.confirmed_at,
+        completed_at: event.completed_at,
       },
       vendors,
     };
@@ -154,11 +169,29 @@ class EventService {
     ]);
     const clientById = new Map(clients.map((c) => [c.id, c]));
 
-    const [locations, eventVendors] = await Promise.all([
+    const agentProfiles = await agentProfileRepository.findByIds([
+      ...new Set(events.map((e) => e.agent_profile_id)),
+    ]);
+    const agentProfileById = new Map(agentProfiles.map((ap) => [ap.id, ap]));
+    const agentUsers = await userRepository.findByIds([
+      ...new Set(agentProfiles.map((ap) => ap.user_id)),
+    ]);
+    const agentUserById = new Map(agentUsers.map((u) => [u.id, u]));
+
+    const eventIds = events.map((e) => e.id);
+    const [locations, eventVendors, receipts] = await Promise.all([
       locationRepository.findByIds([...new Set(clients.map((c) => c.location_id))]),
-      eventVendorRepository.findByEventIds(events.map((e) => e.id)),
+      eventVendorRepository.findByEventIds(eventIds),
+      eventPaymentReceiptRepository.findByEventIds(eventIds),
     ]);
     const locationById = new Map(locations.map((l) => [l.id, l]));
+
+    const receiptsByEventId = new Map<number, string[]>();
+    for (const receipt of receipts) {
+      const list = receiptsByEventId.get(receipt.event_id) ?? [];
+      list.push(receipt.payment_receipt_url);
+      receiptsByEventId.set(receipt.event_id, list);
+    }
 
     const vendorProfiles = await vendorProfileRepository.findByIds([
       ...new Set(eventVendors.map((ev) => ev.vendor_profile_id)),
@@ -180,7 +213,15 @@ class EventService {
     return events.map((event) => {
       const client = clientById.get(event.client_id);
       const location = client ? locationById.get(client.location_id) : undefined;
+      const agentProfile = agentProfileById.get(event.agent_profile_id);
+      const agentUser = agentProfile ? agentUserById.get(agentProfile.user_id) : undefined;
       return {
+        agent: {
+          id: event.agent_profile_id,
+          name: agentUser ? `${agentUser.first_name} ${agentUser.last_name}` : "",
+          email: agentUser?.email ?? null,
+          phone: agentUser?.phone ?? "",
+        },
         client: {
           id: client?.id ?? event.client_id,
           name: client?.name ?? "",
@@ -198,15 +239,21 @@ class EventService {
           additional_notes: event.additional_notes,
           status: event.status,
           total_amount: event.total_amount,
-          payment_receipt_url: event.payment_receipt_url,
+          payment_receipts: receiptsByEventId.get(event.id) ?? [],
           confirmed_at: event.confirmed_at,
+          completed_at: event.completed_at,
         },
         vendors: eventVendorsByEventId.get(event.id) ?? [],
       };
     });
   };
 
-  confirmEvent = async (user: JWTPayload, data: ConfirmEventDto): Promise<EventResponseDto> => {
+  // The first receipt (e.g. an advance) confirms the event; further receipts can
+  // be added any number of times until an admin marks the event completed.
+  addPaymentReceipt = async (
+    user: JWTPayload,
+    data: AddPaymentReceiptDto,
+  ): Promise<EventWithReceiptsResponseDto> => {
     const { event_id, payment_receipt_url } = data;
     const scope = await resolveAgentScope(user);
     const event = await eventRepository.findById(event_id);
@@ -214,11 +261,40 @@ class EventService {
       throw ApiError.notFound("Event not found");
     }
     assertAgentOwnership(scope, event.agent_profile_id);
-    if (event.status !== EventStatus.VENDOR_SELECTED) {
+    if (event.status === EventStatus.COMPLETED) {
+      throw ApiError.badRequest("Cannot upload receipts for a completed event");
+    }
+    if (event.status === EventStatus.DRAFT) {
       throw ApiError.badRequest("Select at least one vendor before confirming");
     }
 
-    await eventRepository.confirm(event_id, { payment_receipt_url, confirmed_at: new Date() });
+    await sequelize.transaction(async (tx) => {
+      await eventPaymentReceiptRepository.create({ event_id, payment_receipt_url }, tx);
+      if (event.status === EventStatus.VENDOR_SELECTED) {
+        await eventRepository.markConfirmed(event_id, new Date(), tx);
+      }
+    });
+
+    const [updated, receipts] = await Promise.all([
+      eventRepository.findById(event_id),
+      eventPaymentReceiptRepository.findByEventId(event_id),
+    ]);
+    return {
+      ...this.toResponseDto(updated!),
+      payment_receipts: receipts.map((r) => r.payment_receipt_url),
+    };
+  };
+
+  completeEvent = async (event_id: number): Promise<EventResponseDto> => {
+    const event = await eventRepository.findById(event_id);
+    if (!event) {
+      throw ApiError.notFound("Event not found");
+    }
+    if (event.status !== EventStatus.CONFIRMED) {
+      throw ApiError.badRequest("Only confirmed events can be completed");
+    }
+
+    await eventRepository.markCompleted(event_id, new Date());
     const updated = await eventRepository.findById(event_id);
     return this.toResponseDto(updated!);
   };

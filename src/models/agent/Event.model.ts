@@ -13,6 +13,7 @@ export enum EventStatus {
   DRAFT = "draft",
   VENDOR_SELECTED = "vendor_selected",
   CONFIRMED = "confirmed",
+  COMPLETED = "completed",
 }
 
 interface EventAttributes {
@@ -26,8 +27,8 @@ interface EventAttributes {
   additional_notes: string | null;
   status: EventStatus;
   total_amount: number;
-  payment_receipt_url: string | null;
   confirmed_at: Date | null;
+  completed_at: Date | null;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -38,8 +39,8 @@ interface EventCreationAttributes extends Optional<
   | "additional_notes"
   | "status"
   | "total_amount"
-  | "payment_receipt_url"
   | "confirmed_at"
+  | "completed_at"
   | "created_at"
   | "updated_at"
 > {}
@@ -58,8 +59,8 @@ class Event
   public additional_notes!: string | null;
   public status!: EventStatus;
   public total_amount!: number;
-  public payment_receipt_url!: string | null;
   public confirmed_at!: Date | null;
+  public completed_at!: Date | null;
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
 }
@@ -117,11 +118,11 @@ Event.init(
       allowNull: false,
       defaultValue: 0,
     },
-    payment_receipt_url: {
-      type: DataTypes.STRING(500),
+    confirmed_at: {
+      type: DataTypes.DATE,
       allowNull: true,
     },
-    confirmed_at: {
+    completed_at: {
       type: DataTypes.DATE,
       allowNull: true,
     },

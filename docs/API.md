@@ -117,7 +117,7 @@ Same body schema as `POST /register-admin`.
 
 #### `POST /vendor-login`
 
-Same body schema as `POST /admin-login`.
+Same body schema as `POST /admin-login`. Returns 403 "Your account has been suspended" if the user's `status` is `suspended` (see `PATCH /profile/general/suspend-user/:userId`).
 
 #### `POST /vendor-logout`
 
@@ -133,7 +133,7 @@ Same body schema as `POST /register-admin`.
 
 #### `POST /agent-login`
 
-Same body schema as `POST /admin-login`.
+Same body schema as `POST /admin-login`. Returns 403 "Your account has been suspended" if the user's `status` is `suspended`.
 
 #### `POST /agent-logout`
 
@@ -475,7 +475,7 @@ Returns the events the authenticated vendor has been selected on (vendor resolve
 
 | Param    | Required | Notes                                                                                          |
 | -------- | -------- | ------------------------------------------------------------------------------------------------ |
-| `status` | No       | Comma-separated list of `draft`, `vendor_selected`, `confirmed`. Omitted → all statuses. Unrecognized value → 400. Note: `draft` never actually matches anything, since a vendor row only exists once an event reaches `vendor_selected`. |
+| `status` | No       | Comma-separated list of `draft`, `vendor_selected`, `confirmed`, `completed`. Omitted → all statuses. Unrecognized value → 400. Note: `draft` never actually matches anything, since a vendor row only exists once an event reaches `vendor_selected`. |
 
 **Example:** `GET /get-my-bookings?status=vendor_selected,confirmed`
 
@@ -503,8 +503,8 @@ Returns the events the authenticated vendor has been selected on (vendor resolve
         "additional_notes": null,
         "status": "confirmed",
         "total_amount": 15000,
-        "payment_receipt_url": "https://bucket.s3.amazonaws.com/payment_receipts/receipt.jpg",
-        "confirmed_at": "2026-08-26T11:36:27.000Z"
+        "confirmed_at": "2026-08-26T11:36:27.000Z",
+        "completed_at": null
       },
       "my_selection": { "pricing_type": "per_event", "amount": 15000 }
     }
@@ -611,7 +611,7 @@ For `role=agent`, the response is a smaller shape — agents don't have business
 
 #### `PATCH /approve-user-profile/:userId`
 
-Marks the user identified by `userId` (a `users.id`) as email-verified, setting `email_verified` to `true`. Returns 404 if the user doesn't exist, 409 if `email_verified` is already `true`, 400 if `userId` isn't numeric.
+Marks the user identified by `userId` (a `users.id`) as email-verified, setting `email_verified` to `true` and `status` to `active`. This is also how an admin reactivates a suspended user. Returns 404 if the user doesn't exist, 409 if `email_verified` is already `true`, 400 if `userId` isn't numeric.
 
 **Response:**
 
@@ -620,9 +620,35 @@ Marks the user identified by `userId` (a `users.id`) as email-verified, setting 
   "statusCode": 200,
   "data": {
     "id": 2,
+    "status": "active",
     "email_verified": true
   },
   "message": "User profile approved successfully",
+  "success": true
+}
+```
+
+---
+
+#### `PATCH /suspend-user/:userId`
+
+**Role required:** `ADMIN` (others get 403).
+
+Suspends the agent or vendor identified by `userId` (a `users.id`): sets `status` to `suspended` and `email_verified` to `false`. The user can no longer log in (403), and a suspended vendor drops out of agent vendor search/selection, which only includes verified vendors. Tokens issued before the suspension keep working until they expire. Undo with `PATCH /approve-user-profile/:userId`. No body.
+
+Returns 400 if `userId` isn't numeric or the user is an admin, 404 if the user doesn't exist, 409 if already suspended.
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "id": 2,
+    "status": "suspended",
+    "email_verified": false
+  },
+  "message": "User suspended successfully",
   "success": true
 }
 ```
@@ -669,7 +695,7 @@ Lets an agent create clients, create events for those clients, browse and assign
 
 Clients and events are scoped to the agent that owns them (`agent_profile_id`). **Admins have unrestricted cross-agent access**: `GET`/`PATCH`/vendor-selection/confirm endpoints operate on any agent's data, and `POST` (create) endpoints require an extra `agent_id` field (the target agent's `user_id`) in the body since admin has no `AgentProfile` of their own. Agents never send `agent_id` — it's inferred from their JWT and any value they send is ignored.
 
-An event has a `status` that gates the flow: `draft` → `vendor_selected` (after at least one vendor is saved) → `confirmed` (after the receipt is uploaded and confirm is called). Editing an event's core fields or its vendor selection is blocked once `status` is `confirmed`.
+An event has a `status` that gates the flow: `draft` → `vendor_selected` (after at least one vendor is saved) → `confirmed` (after the first payment receipt is uploaded via confirm) → `completed` (admin marks the event done). While `confirmed`, the agent can keep uploading further receipts (e.g. balance after an advance) with no limit; uploads stop once `completed`. Editing an event's core fields or its vendor selection is blocked once `status` is `confirmed` or `completed`.
 
 ### `GET /clients`
 
@@ -747,21 +773,62 @@ Step 2: create an event for a client.
 
 ### `PATCH /events/:eventId`
 
-Edit an event's core fields. Same body fields as create, all optional (at least one required). 400s if the event is already `confirmed`.
+Edit an event's core fields. Same body fields as create, all optional (at least one required). 400s if the event is already `confirmed` or `completed`.
 
 ---
 
 ### `GET /events`
 
-List events filtered by status, scoped to the caller (all agents' events for admin). Response shape matches `GET /events/:eventId/preview` per item (an array of `{ client, event, vendors }` objects).
+List events filtered by status, scoped to the caller (all agents' events for admin). Response shape matches `GET /events/:eventId/preview` per item (an array of `{ agent, client, event, vendors }` objects).
 
 **Query params:**
 
 | Param    | Required | Notes                                                                                          |
 | -------- | -------- | ------------------------------------------------------------------------------------------------ |
-| `status` | No       | Comma-separated list of `draft`, `vendor_selected`, `confirmed`. Omitted → all statuses. Unrecognized value → 400. |
+| `status` | No       | Comma-separated list of `draft`, `vendor_selected`, `confirmed`, `completed`. Omitted → all statuses. Unrecognized value → 400. |
 
 **Example:** `GET /events?status=draft,vendor_selected`
+
+**Response `data`:** (one item shown)
+
+```json
+[
+  {
+    "agent": {
+      "id": 2,
+      "name": "Rahul Mehta",
+      "email": "rahul@example.com",
+      "phone": "9123456780"
+    },
+    "client": {
+      "id": 1,
+      "name": "Priya Sharma",
+      "email": "priya@example.com",
+      "phone": "9876543210",
+      "address": "12 MG Road, Bangalore",
+      "location": { "id": 3, "name": "Bangalore" }
+    },
+    "event": {
+      "id": 5,
+      "event_name": "Priya's Wedding",
+      "event_priority": "high",
+      "estimated_budget": 500000,
+      "preferred_date": "2026-12-10",
+      "additional_notes": null,
+      "status": "vendor_selected",
+      "total_amount": 85000,
+      "payment_receipts": [],
+      "confirmed_at": null,
+      "completed_at": null
+    },
+    "vendors": [
+      { "vendor_profile_id": 9, "business_name": "Grand Caterers", "pricing_type": "per_event", "amount": 85000 }
+    ]
+  }
+]
+```
+
+`payment_receipts` is every receipt URL the agent has uploaded for the event, oldest first (empty until the event is confirmed).
 
 ---
 
@@ -796,19 +863,34 @@ Step 3b: save (or replace) the event's vendor selection. Re-validates every vend
 
 ### `GET /events/:eventId/preview`
 
-Step 3c: aggregated view of the client, the event (including `total_amount`), and all selected vendors.
+Step 3c: aggregated view of the owning agent, the client, the event (including `total_amount`), and all selected vendors. Response shape matches each item of `GET /events` — see its example above (a single `{ agent, client, event, vendors }` object, not an array).
 
 ---
 
 ### `PATCH /events/:eventId/confirm`
 
-Step 4: upload the payment receipt (via `POST /api/v1/upload/images` first, then pass the returned URL here) and confirm the event. Requires `status = vendor_selected`; sets `status = confirmed` and `confirmed_at`.
+Step 4: upload a payment receipt (via `POST /api/v1/upload/images` first, then pass the returned URL here). Can be called any number of times; each call appends a new receipt.
+
+- `status = vendor_selected` → receipt saved, `status` becomes `confirmed`, `confirmed_at` set.
+- `status = confirmed` → receipt appended; status unchanged.
+- `status = draft` → 400 "Select at least one vendor before confirming".
+- `status = completed` → 400 "Cannot upload receipts for a completed event".
 
 **Body (JSON):**
 
 | Field                  | Type   | Required | Rules      |
 | ----------------------- | ------ | -------- | ----------- |
 | `payment_receipt_url`   | string | Yes      | Valid URL   |
+
+**Response `data`:** the event's core fields plus `payment_receipts: string[]` (all receipts so far, oldest first).
+
+---
+
+### `PATCH /events/:eventId/complete`
+
+**Role required:** `ADMIN` (agents get 403).
+
+Marks a `confirmed` event as `completed` and sets `completed_at`. 400 if the event is not `confirmed`. After this, no more receipts can be uploaded and the event/vendors can't be edited. No body.
 
 ---
 
@@ -915,6 +997,7 @@ GET    /api/v1/profile/vendor/get-my-bookings                        [Auth + VEN
 GET    /api/v1/profile/general/get-profile-details                          [Auth ]
 GET    /api/v1/profile/general/get-profile-details-by-id/:profileId         [Auth ]
 PATCH  /api/v1/profile/general/approve-user-profile/:userId                 [Auth ]
+PATCH  /api/v1/profile/general/suspend-user/:userId                         [Auth + ADMIN]
 
 POST   /api/v1/upload/images                   [Auth, multipart]
 
@@ -928,4 +1011,5 @@ GET    /api/v1/agent-clients/vendors/search                   [Auth + AGENT|ADMI
 PUT    /api/v1/agent-clients/events/:eventId/vendors          [Auth + AGENT|ADMIN]
 GET    /api/v1/agent-clients/events/:eventId/preview          [Auth + AGENT|ADMIN]
 PATCH  /api/v1/agent-clients/events/:eventId/confirm          [Auth + AGENT|ADMIN]
+PATCH  /api/v1/agent-clients/events/:eventId/complete         [Auth + ADMIN]
 ```
