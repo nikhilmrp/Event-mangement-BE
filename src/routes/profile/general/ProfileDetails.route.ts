@@ -1,3 +1,4 @@
+import earningsController from "@controllers/profile/earnings.controller";
 import profileDetailsController from "@controllers/profile/profileDetails.controller";
 import { validateUserRole } from "@middleware/validateUserRole.middleware";
 import { UserRole } from "@models/User.model";
@@ -13,6 +14,11 @@ router.get(
 router.patch(
   "/approve-user-profile/:userId",
   profileDetailsController.approveUserProfile,
+);
+router.get(
+  "/get-earnings",
+  validateUserRole(UserRole.ADMIN),
+  earningsController.getEarningsList,
 );
 router.patch(
   "/suspend-user/:userId",

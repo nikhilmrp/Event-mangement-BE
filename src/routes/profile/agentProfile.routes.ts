@@ -1,4 +1,5 @@
 import agentProfileController from "@controllers/profile/agentProfile.controller";
+import earningsController from "@controllers/profile/earnings.controller";
 import { validate } from "@middleware/validate.middleware";
 import { createAgentProfileSchema } from "@validators/profile.validator";
 import bankDetailsRoute from "./general/bankDetails.route";
@@ -13,6 +14,7 @@ router.post(
   validate(createAgentProfileSchema),
   agentProfileController.createAgentProfile,
 );
+router.get("/my-earnings", validateUserRole(UserRole.AGENT), earningsController.getMyEarnings);
 router.use("/bank-details", validateUserRole(UserRole.AGENT), bankDetailsRoute);
 
 export default router;

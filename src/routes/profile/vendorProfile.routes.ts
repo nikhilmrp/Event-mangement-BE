@@ -1,3 +1,4 @@
+import earningsController from "@controllers/profile/earnings.controller";
 import vendorBookingController from "@controllers/profile/vendorBooking.controller";
 import vendorProfileController from "@controllers/profile/vendorProfile.controller";
 import vendorUnavailabilityController from "@controllers/profile/vendorUnavailability.controller";
@@ -58,6 +59,7 @@ router.get(
   validateUserRole(UserRole.VENDOR),
   vendorBookingController.getMyBookings,
 );
+router.get("/my-earnings", validateUserRole(UserRole.VENDOR), earningsController.getMyEarnings);
 router.use("/bank-details", validateUserRole(UserRole.VENDOR), bankDetailsRoute);
 
 export default router;

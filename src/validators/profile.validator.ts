@@ -187,4 +187,7 @@ export const uploadWorkGallerySchema = Joi.object({
     "any.required": "Image urls are required",
     "array.base": "Image urls must be an array",
   }),
+  work_links: Joi.array().items(Joi.string().trim()).default([]).messages({
+    "array.base": "Work links must be an array",
+  }),
 }).options({ stripUnknown: true });

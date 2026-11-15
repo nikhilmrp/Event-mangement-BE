@@ -396,10 +396,11 @@ No parameters. Returns all vendor types.
 
 **Body (JSON):**
 
-| Field        | Type     | Required | Rules               |
-| ------------ | -------- | -------- | ------------------- |
-| `user_id`    | number   | Yes      | Positive integer    |
-| `image_urls` | string[] | Yes      | Array of valid URIs |
+| Field        | Type     | Required | Rules                                                                                                       |
+| ------------ | -------- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| `user_id`    | number   | Yes      | Positive integer                                                                                            |
+| `image_urls` | string[] | Yes      | Array of valid URIs                                                                                         |
+| `work_links` | string[] | No       | Extra links to the vendor's work (portfolio, Instagram, YouTube, etc.). Defaults to `[]`; not URL-validated |
 
 **Example:**
 
@@ -409,9 +410,12 @@ No parameters. Returns all vendor types.
   "image_urls": [
     "https://bucket.s3.amazonaws.com/image1.jpg",
     "https://bucket.s3.amazonaws.com/image2.jpg"
-  ]
+  ],
+  "work_links": ["https://instagram.com/perfectevents", "https://youtube.com/watch?v=abc123"]
 }
 ```
+
+The response returns `vendor_profile_id`, `image_urls` (`[{ id, image_url }]`) and `work_links` (`[{ id, url }]`).
 
 ---
 
@@ -473,8 +477,8 @@ Returns the events the authenticated vendor has been selected on (vendor resolve
 
 **Query params:**
 
-| Param    | Required | Notes                                                                                          |
-| -------- | -------- | ------------------------------------------------------------------------------------------------ |
+| Param    | Required | Notes                                                                                                                                                                                                                                                  |
+| -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `status` | No       | Comma-separated list of `draft`, `vendor_selected`, `confirmed`, `completed`. Omitted → all statuses. Unrecognized value → 400. Note: `draft` never actually matches anything, since a vendor row only exists once an event reaches `vendor_selected`. |
 
 **Example:** `GET /get-my-bookings?status=vendor_selected,confirmed`
@@ -536,7 +540,7 @@ Optionally filter with `?search=<term>` — case-insensitive substring match, ap
 
 Returns everything saved so far for a single vendor or agent profile, based on the `role` query param. `profileId` is the `vendor_profiles.id` or `agent_profiles.id` (not a `users.id`), matching the given role. `role=admin` or an invalid/missing role returns 400.
 
-For `role=vendor`, the response includes business details, service details (vendor type + categories), pricing details, work gallery, and bank details. Sections that haven't been completed yet return an empty array (`pricing_details`, `work_gallery`, `vendor_categories`, `service_locations`) or `null` (`vendor_type`, `bank_details`).
+For `role=vendor`, the response includes business details, service details (vendor type + categories), pricing details, work gallery, work links, and bank details. Sections that haven't been completed yet return an empty array (`pricing_details`, `work_gallery`, `work_links`, `vendor_categories`, `service_locations`) or `null` (`vendor_type`, `bank_details`).
 
 **Response (`role=vendor`):**
 
@@ -561,6 +565,7 @@ For `role=vendor`, the response includes business details, service details (vend
     "vendor_categories": [{ "id": 1, "name": "Wedding Photography" }],
     "pricing_details": [{ "id": 1, "pricing_type": "per_hour", "amount": 500 }],
     "work_gallery": [{ "id": 1, "image_url": "https://bucket.s3.amazonaws.com/image1.jpg" }],
+    "work_links": [{ "id": 1, "url": "https://instagram.com/perfectevents" }],
     "bank_details": {
       "id": 1,
       "bank_name": "HDFC Bank",
@@ -655,6 +660,63 @@ Returns 400 if `userId` isn't numeric or the user is an admin, 404 if the user d
 
 ---
 
+### Earnings
+
+Earnings are written when an admin completes an event (see [`PATCH /events/:eventId/complete`](#patch-eventseventidcomplete)). Only completed events count. The admin's share is stored but never returned by any endpoint.
+
+#### `GET /agent/my-earnings`
+
+**Role required:** `AGENT`. Returns the calling agent's total commission across all completed events.
+
+#### `GET /vendor/my-earnings`
+
+**Role required:** `VENDOR`. Returns the calling vendor's total payout (price minus agent and admin commission) across all completed events.
+
+**Response (both):**
+
+```json
+{
+  "statusCode": 200,
+  "data": { "profile_id": 3, "total_earnings": 8000, "completed_events": 1 },
+  "message": "Earnings fetched successfully",
+  "success": true
+}
+```
+
+Returns 404 if the caller has no agent/vendor profile. Totals are `0` until an event completes.
+
+#### `GET /general/get-earnings?role=agent|vendor&search=`
+
+**Role required:** `ADMIN` (others get 403).
+
+Lists every approved (`profile_completed`) agent or vendor with their total earnings, highest first. Profiles with no earnings show `0`. `search` (optional) matches name, email, phone, or `business_name` (vendors) and is case-insensitive. Returns 400 if `role` is not `agent` or `vendor`.
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "data": [
+    {
+      "profile_id": 3,
+      "user_id": 12,
+      "name": "Ravi Kumar",
+      "email": "ravi@example.com",
+      "phone": "9876543210",
+      "business_name": "Ravi Caterers",
+      "total_earnings": 8000,
+      "completed_events": 1
+    }
+  ],
+  "message": "Earnings fetched successfully",
+  "success": true
+}
+```
+
+`business_name` is only present when `role=vendor`.
+
+---
+
 ## Upload Endpoints
 
 **Prefix:** `/api/v1/upload`  
@@ -722,7 +784,12 @@ Entry point. Returns the caller's clients (all agents' clients for admin), each 
         "status": "vendor_selected",
         "total_amount": 85000,
         "vendors": [
-          { "vendor_profile_id": 9, "business_name": "Grand Caterers", "pricing_type": "per_event", "amount": 85000 }
+          {
+            "vendor_profile_id": 9,
+            "business_name": "Grand Caterers",
+            "pricing_type": "per_event",
+            "amount": 85000
+          }
         ]
       }
     ]
@@ -738,14 +805,14 @@ Step 1: create a client.
 
 **Body (JSON):**
 
-| Field         | Type   | Required                | Rules                                              |
-| ------------- | ------ | ------------------------ | --------------------------------------------------- |
-| `agent_id`    | number | Admin only               | Positive integer; the owning agent's `user_id`      |
-| `name`        | string | Yes                      | 1–150 characters                                    |
-| `email`       | string | No                       | Valid email address                                 |
-| `phone`       | string | Yes                      | 10-digit Indian number (starts with 6–9)             |
-| `address`     | string | Yes                      | 1–500 characters (single free-text field)            |
-| `location_id` | number | Yes                      | Positive integer, must reference an active location  |
+| Field         | Type   | Required   | Rules                                               |
+| ------------- | ------ | ---------- | --------------------------------------------------- |
+| `agent_id`    | number | Admin only | Positive integer; the owning agent's `user_id`      |
+| `name`        | string | Yes        | 1–150 characters                                    |
+| `email`       | string | No         | Valid email address                                 |
+| `phone`       | string | Yes        | 10-digit Indian number (starts with 6–9)            |
+| `address`     | string | Yes        | 1–500 characters (single free-text field)           |
+| `location_id` | number | Yes        | Positive integer, must reference an active location |
 
 ---
 
@@ -761,13 +828,13 @@ Step 2: create an event for a client.
 
 **Body (JSON):**
 
-| Field               | Type   | Required | Rules                                  |
-| ------------------- | ------ | -------- | --------------------------------------- |
-| `event_name`        | string | Yes      | 1–150 characters                        |
-| `event_priority`    | string | Yes      | One of `low`, `moderate`, `high`        |
-| `estimated_budget`  | number | Yes      | Positive number                         |
-| `preferred_date`    | string | Yes      | ISO date (`YYYY-MM-DD`)                 |
-| `additional_notes`  | string | No       | Up to 2000 characters                   |
+| Field              | Type   | Required | Rules                            |
+| ------------------ | ------ | -------- | -------------------------------- |
+| `event_name`       | string | Yes      | 1–150 characters                 |
+| `event_priority`   | string | Yes      | One of `low`, `moderate`, `high` |
+| `estimated_budget` | number | Yes      | Positive number                  |
+| `preferred_date`   | string | Yes      | ISO date (`YYYY-MM-DD`)          |
+| `additional_notes` | string | No       | Up to 2000 characters            |
 
 ---
 
@@ -783,8 +850,8 @@ List events filtered by status, scoped to the caller (all agents' events for adm
 
 **Query params:**
 
-| Param    | Required | Notes                                                                                          |
-| -------- | -------- | ------------------------------------------------------------------------------------------------ |
+| Param    | Required | Notes                                                                                                                           |
+| -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `status` | No       | Comma-separated list of `draft`, `vendor_selected`, `confirmed`, `completed`. Omitted → all statuses. Unrecognized value → 400. |
 
 **Example:** `GET /events?status=draft,vendor_selected`
@@ -822,7 +889,12 @@ List events filtered by status, scoped to the caller (all agents' events for adm
       "completed_at": null
     },
     "vendors": [
-      { "vendor_profile_id": 9, "business_name": "Grand Caterers", "pricing_type": "per_event", "amount": 85000 }
+      {
+        "vendor_profile_id": 9,
+        "business_name": "Grand Caterers",
+        "pricing_type": "per_event",
+        "amount": 85000
+      }
     ]
   }
 ]
@@ -838,12 +910,12 @@ Step 3a: browse approved vendors available for an event's date.
 
 **Query params:**
 
-| Param                 | Required | Notes                                                                 |
-| ---------------------- | -------- | ---------------------------------------------------------------------- |
-| `location_id`          | Yes      | Used for ranking only — matching vendors are sorted first, never excluded |
-| `date`                 | Yes      | ISO date; vendors with a blocked `VendorUnavailability` row on this date are excluded |
-| `vendor_type_id`       | No       | Filters candidates to this vendor type                                |
-| `vendor_category_id`   | No       | Filters candidates to vendors offering this category                  |
+| Param                | Required | Notes                                                                                 |
+| -------------------- | -------- | ------------------------------------------------------------------------------------- |
+| `location_id`        | Yes      | Used for ranking only — matching vendors are sorted first, never excluded             |
+| `date`               | Yes      | ISO date; vendors with a blocked `VendorUnavailability` row on this date are excluded |
+| `vendor_type_id`     | No       | Filters candidates to this vendor type                                                |
+| `vendor_category_id` | No       | Filters candidates to vendors offering this category                                  |
 
 Only vendors with `profile_completed = true` and `email_verified = true` are returned. Each result includes business details, vendor type/categories, and all of the vendor's pricing options (`per_hour`/`per_day`/`per_event`).
 
@@ -855,8 +927,8 @@ Step 3b: save (or replace) the event's vendor selection. Re-validates every vend
 
 **Body (JSON):**
 
-| Field        | Type  | Required | Rules                                                         |
-| ------------ | ----- | -------- | --------------------------------------------------------------- |
+| Field        | Type  | Required | Rules                                                                                                                  |
+| ------------ | ----- | -------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `selections` | array | Yes      | `{ vendor_profile_id: number, pricing_type: "per_hour"\|"per_day"\|"per_event" }[]`; may be empty to clear all vendors |
 
 ---
@@ -878,9 +950,9 @@ Step 4: upload a payment receipt (via `POST /api/v1/upload/images` first, then p
 
 **Body (JSON):**
 
-| Field                  | Type   | Required | Rules      |
-| ----------------------- | ------ | -------- | ----------- |
-| `payment_receipt_url`   | string | Yes      | Valid URL   |
+| Field                 | Type   | Required | Rules     |
+| --------------------- | ------ | -------- | --------- |
+| `payment_receipt_url` | string | Yes      | Valid URL |
 
 **Response `data`:** the event's core fields plus `payment_receipts: string[]` (all receipts so far, oldest first).
 
@@ -890,7 +962,22 @@ Step 4: upload a payment receipt (via `POST /api/v1/upload/images` first, then p
 
 **Role required:** `ADMIN` (agents get 403).
 
-Marks a `confirmed` event as `completed` and sets `completed_at`. 400 if the event is not `confirmed`. After this, no more receipts can be uploaded and the event/vendors can't be edited. No body.
+Marks a `confirmed` event as `completed` and sets `completed_at`. After this, no more receipts can be uploaded and the event/vendors can't be edited. No body.
+
+**Commission split.** In the same transaction, each vendor on the event is settled separately, using **that vendor's own price** (`event_vendors.amount`) and **its own vendor type's `commission_percentage`**. The event `total_amount` is not used.
+
+- agent gets `price × % / 100`
+- admin gets `price × % / 100` (stored, never exposed)
+- vendor gets `price − agent − admin`
+
+| Vendor   | Price  | Type % | Agent | Admin | Vendor |
+| -------- | ------ | ------ | ----- | ----- | ------ |
+| Vendor 1 | 10,000 | 10%    | 1,000 | 1,000 | 8,000  |
+| Vendor 2 | 20,000 | 5%     | 1,000 | 1,000 | 18,000 |
+
+The agent earns 2,000 for this event. The % is copied in at completion, so editing a vendor type later doesn't change past earnings. Totals are read via the [Earnings](#earnings) endpoints.
+
+**Errors:** 400 if the event is not `confirmed`, has no vendors, or a vendor has no vendor type; 404 if the event doesn't exist.
 
 ---
 
