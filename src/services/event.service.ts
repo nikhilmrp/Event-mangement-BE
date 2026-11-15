@@ -9,9 +9,12 @@ import {
 } from "@dto/event.dto";
 import { EventVendorSummaryDto } from "@dto/eventVendor.dto";
 import Event, { EventStatus } from "@models/agent/Event.model";
+import { EventEarningCreationAttributes } from "@models/agent/EventEarning.model";
 import agentProfileRepository from "@repositories/agentProfile.repository";
 import clientRepository from "@repositories/client.repository";
 import locationRepository from "@repositories/config/location.repository";
+import vendorTypeRepository from "@repositories/config/vendortype.repository";
+import eventEarningRepository from "@repositories/eventEarning.repository";
 import eventRepository from "@repositories/event.repository";
 import eventPaymentReceiptRepository from "@repositories/eventPaymentReceipt.repository";
 import eventVendorRepository from "@repositories/eventVendor.repository";
@@ -294,9 +297,70 @@ class EventService {
       throw ApiError.badRequest("Only confirmed events can be completed");
     }
 
-    await eventRepository.markCompleted(event_id, new Date());
+    const earningRows = await this.buildEarningRows(event);
+
+    await sequelize.transaction(async (tx) => {
+      await eventEarningRepository.bulkCreate(earningRows, tx);
+      await eventRepository.markCompleted(event_id, new Date(), tx);
+    });
     const updated = await eventRepository.findById(event_id);
     return this.toResponseDto(updated!);
+  };
+
+  // Each vendor is split on its own price and its own vendor type's commission %:
+  // the agent and the admin each get price × % / 100, and the vendor gets the rest.
+  // Math is done in minor units (paise) so rounding never loses or invents money.
+  private buildEarningRows = async (event: Event): Promise<EventEarningCreationAttributes[]> => {
+    const eventVendors = await eventVendorRepository.findByEventId(event.id);
+    if (!eventVendors.length) {
+      throw ApiError.badRequest("Event has no vendors to settle");
+    }
+
+    const vendorProfiles = await vendorProfileRepository.findByIds([
+      ...new Set(eventVendors.map((ev) => ev.vendor_profile_id)),
+    ]);
+    const vendorProfileById = new Map(vendorProfiles.map((v) => [v.id, v]));
+    const vendorTypeIds = [
+      ...new Set(
+        vendorProfiles.map((v) => v.vendor_type_id).filter((id): id is number => id !== null),
+      ),
+    ];
+    const vendorTypes = await vendorTypeRepository.findByIds(vendorTypeIds);
+    const vendorTypeById = new Map(vendorTypes.map((vt) => [vt.id, vt]));
+
+    return eventVendors.map((ev) => {
+      const vendorProfile = vendorProfileById.get(ev.vendor_profile_id);
+      if (!vendorProfile) {
+        throw ApiError.badRequest(`Vendor ${ev.vendor_profile_id} not found`);
+      }
+      const vendorType =
+        vendorProfile.vendor_type_id !== null
+          ? vendorTypeById.get(vendorProfile.vendor_type_id)
+          : undefined;
+      if (!vendorType) {
+        throw ApiError.badRequest(
+          `Vendor ${vendorProfile.business_name} has no vendor type, cannot calculate commission`,
+        );
+      }
+
+      const percentage = Number(vendorType.commission_percentage);
+      const grossMinor = Math.round(Number(ev.amount) * 100);
+      const commissionMinor = Math.round((grossMinor * percentage) / 100);
+      const vendorMinor = grossMinor - commissionMinor * 2;
+
+      return {
+        event_id: event.id,
+        event_vendor_id: ev.id,
+        agent_profile_id: event.agent_profile_id,
+        vendor_profile_id: ev.vendor_profile_id,
+        vendor_type_id: vendorType.id,
+        gross_amount: grossMinor / 100,
+        commission_percentage: percentage,
+        agent_amount: commissionMinor / 100,
+        admin_amount: commissionMinor / 100,
+        vendor_amount: vendorMinor / 100,
+      };
+    });
   };
 
   private toResponseDto = (event: Event): EventResponseDto => ({
