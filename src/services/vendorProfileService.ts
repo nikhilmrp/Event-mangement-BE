@@ -19,6 +19,7 @@ import vendorPricingRepository from "@repositories/vendorPricing.repository";
 import vendorProfileRepository from "@repositories/vendorProfile.repository";
 import vendorProfileCategoryRepository from "@repositories/vendorProfileCategory.repository";
 import VendorProfileLocationRepository from "@repositories/vendorProfileLocation.repository";
+import vendorWorkLinkRepository from "@repositories/vendorWorkLink.repository";
 import ApiError from "@utils/ApiError";
 
 class VendorProfileService {
@@ -141,7 +142,7 @@ class VendorProfileService {
   uploadWorkGalleryImages = async (
     data: UploadWorkGalleryDto,
   ): Promise<UploadWorkGalleryResponseDto> => {
-    const { user_id, image_urls } = data;
+    const { user_id, image_urls, work_links = [] } = data;
     const vendorProfile = await vendorProfileRepository.findByUserId(user_id);
     if (!vendorProfile) {
       throw ApiError.notFound("Vendor profile not found");
@@ -154,6 +155,13 @@ class VendorProfileService {
         })),
         tx,
       );
+      const workLinks =
+        work_links.length > 0
+          ? await vendorWorkLinkRepository.bulkCreate(
+              work_links.map((url) => ({ vendor_profile_id: vendorProfile.id, url })),
+              tx,
+            )
+          : [];
       await vendorProfileRepository.updateProfileStep(user_id, 4, false, tx);
       return {
         vendor_profile_id: vendorProfile.id,
@@ -161,6 +169,7 @@ class VendorProfileService {
           id: w.id,
           image_url: w.image_url,
         })),
+        work_links: workLinks.map((l) => ({ id: l.id, url: l.url })),
       };
     });
   };
@@ -173,17 +182,25 @@ class VendorProfileService {
       throw ApiError.notFound("Vendor profile not found");
     }
 
-    const [categoryLinks, locationLinks, pricingDetails, galleryImages, bankDetails, vendorType] =
-      await Promise.all([
-        vendorProfileCategoryRepository.findByVendorProfileId(vendorProfile.id),
-        VendorProfileLocationRepository.findByVendorProfileIds([vendorProfile.id]),
-        vendorPricingRepository.findByVendorProfileId(vendorProfile.id),
-        VendorGalleryRespository.findByVendorProfileId(vendorProfile.id),
-        bankDetailsRepository.findByUserId(vendorProfile.user_id),
-        vendorProfile.vendor_type_id
-          ? vendortypeRepository.findById(vendorProfile.vendor_type_id)
-          : null,
-      ]);
+    const [
+      categoryLinks,
+      locationLinks,
+      pricingDetails,
+      galleryImages,
+      workLinks,
+      bankDetails,
+      vendorType,
+    ] = await Promise.all([
+      vendorProfileCategoryRepository.findByVendorProfileId(vendorProfile.id),
+      VendorProfileLocationRepository.findByVendorProfileIds([vendorProfile.id]),
+      vendorPricingRepository.findByVendorProfileId(vendorProfile.id),
+      VendorGalleryRespository.findByVendorProfileId(vendorProfile.id),
+      vendorWorkLinkRepository.findByVendorProfileId(vendorProfile.id),
+      bankDetailsRepository.findByUserId(vendorProfile.user_id),
+      vendorProfile.vendor_type_id
+        ? vendortypeRepository.findById(vendorProfile.vendor_type_id)
+        : null,
+    ]);
 
     const [categories, locations] = await Promise.all([
       vendorcategoryRepository.findByIds(categoryLinks.map((c) => c.vendor_category_id)),
@@ -217,6 +234,7 @@ class VendorProfileService {
         amount: p.amount,
       })),
       work_gallery: galleryImages.map((g) => ({ id: g.id, image_url: g.image_url })),
+      work_links: workLinks.map((l) => ({ id: l.id, url: l.url })),
       bank_details: bankDetails
         ? {
             id: bankDetails.id,

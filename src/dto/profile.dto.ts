@@ -64,6 +64,7 @@ export interface PricingDetailsResponseDto {
 export interface UploadWorkGalleryDto {
   user_id: number;
   image_urls: string[];
+  work_links?: string[];
 }
 
 export interface WorkGalleryImage {
@@ -71,9 +72,15 @@ export interface WorkGalleryImage {
   image_url: string;
 }
 
+export interface WorkLink {
+  id: number;
+  url: string;
+}
+
 export interface UploadWorkGalleryResponseDto {
   vendor_profile_id: number;
   image_urls: WorkGalleryImage[];
+  work_links: WorkLink[];
 }
 
 export interface AddVendorUnavailabilityDto {
@@ -133,6 +140,7 @@ export interface VendorProfileFullDetailsResponseDto {
   vendor_categories: IdNameDto[];
   pricing_details: PricingDetails[];
   work_gallery: WorkGalleryImage[];
+  work_links: WorkLink[];
   bank_details: BankDetailsFullDto | null;
 }
 

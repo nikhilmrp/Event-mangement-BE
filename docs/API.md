@@ -396,10 +396,11 @@ No parameters. Returns all vendor types.
 
 **Body (JSON):**
 
-| Field        | Type     | Required | Rules               |
-| ------------ | -------- | -------- | ------------------- |
-| `user_id`    | number   | Yes      | Positive integer    |
-| `image_urls` | string[] | Yes      | Array of valid URIs |
+| Field        | Type     | Required | Rules                                                                                                       |
+| ------------ | -------- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| `user_id`    | number   | Yes      | Positive integer                                                                                            |
+| `image_urls` | string[] | Yes      | Array of valid URIs                                                                                         |
+| `work_links` | string[] | No       | Extra links to the vendor's work (portfolio, Instagram, YouTube, etc.). Defaults to `[]`; not URL-validated |
 
 **Example:**
 
@@ -409,9 +410,12 @@ No parameters. Returns all vendor types.
   "image_urls": [
     "https://bucket.s3.amazonaws.com/image1.jpg",
     "https://bucket.s3.amazonaws.com/image2.jpg"
-  ]
+  ],
+  "work_links": ["https://instagram.com/perfectevents", "https://youtube.com/watch?v=abc123"]
 }
 ```
+
+The response returns `vendor_profile_id`, `image_urls` (`[{ id, image_url }]`) and `work_links` (`[{ id, url }]`).
 
 ---
 
@@ -536,7 +540,7 @@ Optionally filter with `?search=<term>` — case-insensitive substring match, ap
 
 Returns everything saved so far for a single vendor or agent profile, based on the `role` query param. `profileId` is the `vendor_profiles.id` or `agent_profiles.id` (not a `users.id`), matching the given role. `role=admin` or an invalid/missing role returns 400.
 
-For `role=vendor`, the response includes business details, service details (vendor type + categories), pricing details, work gallery, and bank details. Sections that haven't been completed yet return an empty array (`pricing_details`, `work_gallery`, `vendor_categories`, `service_locations`) or `null` (`vendor_type`, `bank_details`).
+For `role=vendor`, the response includes business details, service details (vendor type + categories), pricing details, work gallery, work links, and bank details. Sections that haven't been completed yet return an empty array (`pricing_details`, `work_gallery`, `work_links`, `vendor_categories`, `service_locations`) or `null` (`vendor_type`, `bank_details`).
 
 **Response (`role=vendor`):**
 
@@ -561,6 +565,7 @@ For `role=vendor`, the response includes business details, service details (vend
     "vendor_categories": [{ "id": 1, "name": "Wedding Photography" }],
     "pricing_details": [{ "id": 1, "pricing_type": "per_hour", "amount": 500 }],
     "work_gallery": [{ "id": 1, "image_url": "https://bucket.s3.amazonaws.com/image1.jpg" }],
+    "work_links": [{ "id": 1, "url": "https://instagram.com/perfectevents" }],
     "bank_details": {
       "id": 1,
       "bank_name": "HDFC Bank",

@@ -55,10 +55,11 @@ class VendorProfileController {
   }
 
   async uploadWorkGalleryImages(req: Request, res: Response) {
-    const { user_id, image_urls }: UploadWorkGalleryDto = req.body;
+    const { user_id, image_urls, work_links }: UploadWorkGalleryDto = req.body;
     const workGalleryImages = await vendorProfileService.uploadWorkGalleryImages({
       user_id,
       image_urls,
+      work_links,
     });
     logger.info("Work gallery images uploaded successfully", workGalleryImages);
     res.json(new ApiResponse(201, workGalleryImages, "Work gallery images uploaded successfully"));
